@@ -1,0 +1,60 @@
+# ================================================
+# Pixi
+# ================================================
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+# ================================================
+# R
+# ================================================
+# Generated during R sessions — never useful to track
+Rplots.pdf
+.Rhistory
+.RData
+.Rproj.user/
+
+# ================================================
+# Logs
+# ================================================
+# Track the logs/ folder itself but ignore everything inside
+logs/*
+!logs/.gitkeep
+
+# ================================================
+# 2_input
+# ================================================
+# Track the cellranger-matrix-counts folder structure
+# but ignore actual matrix data (large binary files)
+2_input/cellranger-matrix-counts/*
+!2_input/cellranger-matrix-counts/.gitkeep
+
+# ================================================
+# 3_output
+# ================================================
+# Track folder structure only — all generated output is ignored
+3_output/filtered_data/*
+!3_output/filtered_data/.gitkeep
+
+3_output/plots/*
+!3_output/plots/.gitkeep
+
+3_output/qc_metrics/*
+!3_output/qc_metrics/.gitkeep
+
+# ================================================
+# Large data files (safety net)
+# ================================================
+# Catches any data files that land anywhere in the repo
+*DS_Store
+*.rds
+*.csv
+*.h5
+*.bam
+*.fastq
+*.fastq.gz
+*.sra
+*.mtx
+*.tsv.gz
+*.bed
+*.bw
