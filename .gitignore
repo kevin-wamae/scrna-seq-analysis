@@ -58,3 +58,6 @@ logs/*
 *.tsv.gz
 *.bed
 *.bw
+*.jpg
+*.png
+*.pdf
