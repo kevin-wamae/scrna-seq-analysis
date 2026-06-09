@@ -1,12 +1,28 @@
-# -----------------------------------------------------------------------------#
+# ****************************************************************************#
 # STEP 2: Load 10x Genomics data
-# -----------------------------------------------------------------------------#
+# ****************************************************************************#
 
-# Define paths
-sample_name <- "Healthy_1"
-cellranger_output <- "/nfs/jbailey5/baileyweb/colabs/kwamae/software/scrna-seq-analysis/cellranger-matrix-counts"
+
+# --- DEFINE PATHS/VARIABLES ---
+# ****************************************************************************#
+# Define sample metadata (change these variables accordingly)
+META_SAMPLE_NAME <- "Healthy_1"
+META_SRA_ID <- "SRR14575500"
+META_CONDITION <- "Healthy"
+META_PATIENT_ID <- "Donor_1"
+
+# the directory containing the 10x files (from Cell Ranger)
+CELLRANGER_INPUT <- paste0(
+  "2_input/cellranger-matrix-counts/GSE174609_All_Participants/",
+  META_SAMPLE_NAME
+)
+
+# the batch/run identifier and ouput prefix
+RUN_ID <- "2026-06-09-brown-job-3058993"
+
 
 # --- THE CRITICAL MATRIX DECISION: RAW VS FILTERED ---
+# ****************************************************************************#
 # Cell Ranger (10x software) outputs two entirely distinct count matrices:
 #
 # 1. RAW (`raw_feature_bc_matrix`):
@@ -27,16 +43,17 @@ cellranger_output <- "/nfs/jbailey5/baileyweb/colabs/kwamae/software/scrna-seq-a
 
 # OPTION A: Load RAW matrix (what this tutorial demonstrates)
 counts <- Read10X(
-  data.dir = file.path(cellranger_output, "raw_feature_bc_matrix")
+  data.dir = file.path(CELLRANGER_INPUT, "raw_feature_bc_matrix")
 )
 
 # # OPTION B: Load FILTERED matrix (alternative)
 # counts <- Read10X(
-#   data.dir = file.path(cellranger_output, "filtered_feature_bc_matrix")
+#   data.dir = file.path(CELLRANGER_INPUT, "filtered_feature_bc_matrix")
 # )
 
 
-# --- Create Seurat Object ---
+# --- CREATE SEURAT OBJECT ---
+# ****************************************************************************#
 # We initialize the object with ZERO pre-filtering constraints.
 # Setting `min.cells = 0` and `min.features = 0` is required because we want to
 # keep the ambient background noise intact for now. If we filtered genes or
@@ -45,13 +62,14 @@ counts <- Read10X(
 
 seurat_obj <- CreateSeuratObject(
   counts = counts,
-  project = sample_name,
+  project = META_SAMPLE_NAME,
   min.cells = 0, # Explicitly do NOT filter genes yet
   min.features = 0 # Explicitly do NOT filter cells yet
 )
 
 
-# --- Add Experimental Metadata ---
+# --- ADD EXPERIMENTAL METADATA ---
+# ****************************************************************************#
 # Annotates the dataset with project-specific structural metadata. This is
 # essential for downstream analyses when merging multiple patient batches or
 # performing multi-condition differential expression (e.g., Healthy vs Disease).
@@ -70,14 +88,15 @@ seurat_obj <- CreateSeuratObject(
 
 seurat_obj@meta.data <- seurat_obj@meta.data %>%
   mutate(
-    sample_id  = "Healthy_1",
-    sra_id     = "SRR14575500",
-    condition  = "Healthy",
-    patient_id = "Donor_1",
+    sample_id  = META_SAMPLE_NAME,
+    sra_id     = META_SRA_ID,
+    condition  = META_CONDITION,
+    patient_id = META_PATIENT_ID,
     time_point = NA_character_ # Explicit typed NA for column consistency
   )
 
 
-# --- Dimensions Quick Check ---
+# --- DATASET DIMENSIONS QUICK CHECK ---
+# ****************************************************************************#
 cat("Loaded:", ncol(seurat_obj), "droplets ×", nrow(seurat_obj), "genes\n")
 cat("(Most are empty - EmptyDrops will filter in Step 4)\n")
