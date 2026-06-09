@@ -29,9 +29,6 @@
 # its own basic ambient correction. Skip directly to Step 6 (Doublet Detection).
 
 
-library(dplyr)
-library(SoupX)
-
 # --- 1. Prepare SoupX Channel ---
 # We feed SoupX two distinct components:
 # - `tod` (Table of Droplets): The completely raw, unfiltered count matrix
@@ -92,6 +89,8 @@ sc <- tryCatch(
   }
 )
 
+
+# Save the estimated fraction of ambient RNA contamination
 contamination_fraction <- sc$fit$rho
 
 
