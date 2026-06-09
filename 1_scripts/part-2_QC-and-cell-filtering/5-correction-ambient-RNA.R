@@ -1,6 +1,7 @@
-# -----------------------------------------------------------------------------#
+# ****************************************************************************#
 # STEP 5: Ambient RNA correction with SoupX
-# -----------------------------------------------------------------------------#
+# ****************************************************************************#
+
 
 # --- THE PROBLEM OF AMBIENT RNA ("THE SOUP") ---
 # Even droplets that successfully capture a healthy, living cell are not pure.
@@ -29,7 +30,8 @@
 # its own basic ambient correction. Skip directly to Step 6 (Doublet Detection).
 
 
-# --- 1. Prepare SoupX Channel ---
+# --- PREPARE SoupX CHANNEL ---
+# ****************************************************************************#
 # We feed SoupX two distinct components:
 # - `tod` (Table of Droplets): The completely raw, unfiltered count matrix
 #   containing ALL barcodes (saved in Step 4) used to establish the soup profile.
@@ -40,7 +42,8 @@ toc <- LayerData(seurat_obj, layer = "counts")
 sc <- SoupChannel(tod = tod, toc = toc, calcSoupProfile = TRUE)
 
 
-# --- 2. Rapid Clustering for Background Calibration ---
+# --- RAPID CLUSTERING FOR BACKGROUND CALIBRATION ---
+# ****************************************************************************#
 # SoupX needs an approximate understanding of cell identity to figure out which
 # genes do not biologically belong in specific cells. For example, if an
 # entire cluster of T-cells expresses 3% Hemoglobin, SoupX knows that is
@@ -71,7 +74,8 @@ sc <- setClusters(
 )
 
 
-# --- 3. Estimate Contamination Levels ---
+# --- ESTIMATE CONTAMINATION LEVELS ---
+# ****************************************************************************#
 # The `autoEstCont` function looks for highly cell-type-specific genes that
 # should be completely silent in most other cells, monitoring how far they
 # spread across the whole dataset to automatically compute a global
@@ -94,7 +98,8 @@ sc <- tryCatch(
 contamination_fraction <- sc$fit$rho
 
 
-# --- 4. Evaluating Running Metrics & Ranges ---
+# --- EVALUATE RUNNING METRICS & RANGES ---
+# ****************************************************************************#
 # EXPECTED RESULTS & THRESHOLDS:
 # - Contamination < 5% (or NULL): Extremely clean prep (common in PBMCs or
 #   well-preserved suspensions). No correction is needed; skip to avoid noise.
@@ -109,6 +114,7 @@ cat(
     paste0(round(contamination_fraction * 100, 2), "%")
   ), "\n"
 )
+
 
 # --- DECODING A "NULL" CONTAMINATION FRACTION ---
 # WHAT A "NULL" RESULT MEANS:
@@ -132,6 +138,7 @@ cat(
 
 
 # --- 5. Data-Driven Correction Decision ---
+# ****************************************************************************#
 # WHY WE USE A THRESHOLD-BASED DECISION GATE:
 # Running SoupX is not a mandatory box-checking exercise; it is an active
 # intervention. If your contamination fraction returns as `NULL` (meaning the
@@ -171,9 +178,9 @@ if (is.null(contamination_fraction) || contamination_fraction < 0.05) {
 }
 
 
-# -----------------------------------------------------------------------------#
+# ****************************************************************************#
 # SUMMARY & PIPELINE MILESTONE TRANSITION
-# -----------------------------------------------------------------------------#
+# ****************************************************************************#
 # WHERE WE STARTED:
 # Before entering this step, we used EmptyDrops (Step 4) to filter our massive
 # raw matrix down to ~9,600 validated cell barcodes. However, those cells were
@@ -198,4 +205,4 @@ if (is.null(contamination_fraction) || contamination_fraction < 0.05) {
 # allowing us to scan our droplets, identify structural multiplets, and
 # systematically strip out physical doublets to ensure our downstream results
 # represent individual cells.
-# -----------------------------------------------------------------------------#
+# ****************************************************************************#
