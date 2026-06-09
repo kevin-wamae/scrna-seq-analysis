@@ -53,6 +53,7 @@ initial_gene_count <- nrow(sce)
 # - `test.ambient = TRUE`: Forces the algorithm to evaluate droplets below the
 #   lower threshold anyway. If a droplet with 80 UMIs has a specific gene mix
 #   that differs drastically from the soup, it can be rescued as a valid cell.
+set.seed(100)
 empty_results <- emptyDrops(
   m = counts(sce),
   lower = 100,

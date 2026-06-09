@@ -12,6 +12,16 @@
 #   3. Artificial Multi-cell Eradication -> scDblFinder (Excisise doublets)
 #   4. Downstream Downstream Integration -> Seurat (Core structural toolkit)
 
+
+# --- REPRODUCIBILITY MECHANICS ---
+# ****************************************************************************#
+# `set.seed(100)` pins the pseudorandom number generator. Complex algorithms
+# (like UMAP layout dimensions or scDblFinder in-silico synthetic blending)
+# utilize stochastic processes. Setting a static seed guarantees that any
+# analysis performed anywhere will generate identical data clusters.
+set.seed(100)
+
+
 # Terminal output colouring (load first so errors/warnings are coloured)
 library(colorout)
 
