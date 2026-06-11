@@ -34,7 +34,7 @@ version = "0.1.0"
 # Cell Ranger tasks (assumes cellranger in PATH)
 cellranger-count = "cellranger count --id=sample --transcriptome=refdata --fastqs=fastqs/"
 download_SRA = { cmd = "prefetch $SRR_ID && fasterq-dump $SRR_ID --split-files --threads 8", env = { SRR_ID = "SRR123456" } }
-srun = "srun --ntasks=1 --cpus-per-task=4 --mem=10G --time=02:00:00 --pty bash"
+srun = "srun --ntasks=1 --cpus-per-task=4 --mem=16G --time=01:00:00 --pty bash"
 
 #--------------------------------------------------------------------
 # Part 1: Data download and quality control
@@ -59,16 +59,13 @@ r-seurat = ">=5.4.0,<6"        # Core scRNA-seq analysis
 r-seuratobject = ">=5.3.0,<6"  # Seurat data structures
 r-soupx = ">=1.6.2,<2"         # Ambient RNA correction
 
-# bioconductor-scater = ">=1.34.1,<2"              # QC metrics
 bioconductor-singlecellexperiment = ">=1.28.0,<2"  # Data structures for single-cell genomics
 bioconductor-scdblfinder = ">=1.23.4,<2"           # Doublet detection
 bioconductor-dropletutils = ">=1.26.0,<2"          # Droplet (empty) filtering toolkit
 
-# r-fnn = ">=1.1.4.1,<2"      # K-nearest neighbors
-# r-cluster = ">=2.1.8.1,<3"  # Silhouette scores
-# r-reshape2 = ">=1.4.5,<2"   # Data reshaping tools
 r-dplyr = ">=1.1.4,<2"        # Data manipulation
 r-ggplot2 = "*"               # Core plotting
+r-scales = "*"                # x/y axis scaling/formatting for ggplot2
 r-languageserver = "*"        # Language server for R (needed for r-language-server)
 r-jsonlite = "*"              # JSON parsing
 r-httpgd = "*"                # HTTP Graphics Device for R

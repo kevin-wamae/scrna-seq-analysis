@@ -58,9 +58,11 @@ library(SingleCellExperiment)
 # - `patchwork`: Combines separate plot structures together into single panels.
 # - `dplyr`: Provides optimized C++ syntax for lightning-fast metadata column
 #   manipulation, cell annotations, and metadata row mutation.
+# - `scales`: Provides x/y axis scaling/formatting for ggplot2.
 library(ggplot2)
 library(patchwork)
 library(dplyr)
+library(scales)
 
 
 # --- REPRODUCIBILITY MECHANICS ---
