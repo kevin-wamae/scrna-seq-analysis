@@ -1,8 +1,11 @@
-# -----------------------------------------------------------------------------#
+# ****************************************************************************#
 # STEP 7: Calculate QC metrics, visualize, and filter cells
-# -----------------------------------------------------------------------------#
+# ****************************************************************************#
 
+
+# ****************************************************************************#
 # --- THE PURPOSE OF CELL-LEVEL QC ---
+# ****************************************************************************#
 # Up until this point, we have performed technical background clean-up (Steps 4,
 # 5, and 6). Step 7 is our final safety net: cell-level Quality Control. Here,
 # we separate viable, healthy cells from technical artifacts and cellular
@@ -20,7 +23,9 @@
 # Always look at your data distribution profiles before committing to your cutoffs!
 
 
-# --- 1. Calculate Core Diagnostic QC Metrics ---
+# ****************************************************************************#
+# --- CALCULATE CORE DIAGNOSTIC QC METRICS ---
+# ****************************************************************************#
 # This block calculates three vital biological sensors used to evaluate
 # whether a cell barcode represents a healthy living cell or dying debris.
 #
@@ -47,7 +52,9 @@ seurat_obj@meta.data <- seurat_obj@meta.data %>%
   )
 
 
-# --- 2. Print Summary Statistics & Diagnostic Interpretation ---
+# ****************************************************************************#
+# --- PRINT SUMMARY STATISTICS & DIAGNOSTIC INTERPRETATION ---
+# ****************************************************************************#
 # These statistical quantiles and medians serve as initial numeric guardrails to
 # guide your manual threshold settings before plotting.
 cat("\nQC Metric Distributions:\n")
@@ -121,9 +128,9 @@ cat("percent.ribo:\n")
 cat("  Median:", round(median(seurat_obj$percent.ribo), 2), "%\n")
 
 
-# ==============================================================================
-# 3. GENERATE DISTRIBUTION DIAGNOSTICS
-# ==============================================================================
+# ****************************************************************************#
+# --- GENERATE DISTRIBUTION DIAGNOSTICS ---
+# ****************************************************************************#
 # THE VISUAL EXAMINATION CRITERIA:
 # Open your violin and scatter plots and actively look for these flags:
 #   - Bimodal Violins: Double curves indicate distinct populations. Set your
@@ -138,37 +145,127 @@ cat("  Median:", round(median(seurat_obj$percent.ribo), 2), "%\n")
 p4 <- VlnPlot(
   seurat_obj,
   features = c("nCount_RNA", "nFeature_RNA", "percent.mt", "percent.ribo"),
-  ncol = 4,
-  pt.size = 0.1
-) &
+  ncol     = 4,
+  pt.size  = 0.1
+)
+
+# Apply K-scale labels to nCount_RNA (panel 1) and nFeature_RNA (panel 2)
+p4[[1]] <- p4[[1]] +
+  scale_y_continuous(
+    breaks = seq(0, max(seurat_obj$nCount_RNA), by = 20000),
+    labels = scales::label_number(scale_cut = cut_short_scale())
+  ) +
   theme(plot.title = element_text(face = "bold"))
 
-ggsave("plots/03_qc_violins.png", p4, width = 16, height = 4, dpi = 300)
+p4[[2]] <- p4[[2]] +
+  scale_y_continuous(
+    breaks = seq(0, max(seurat_obj$nFeature_RNA), by = 2000),
+    labels = scales::label_number(scale_cut = cut_short_scale())
+  ) +
+  theme(plot.title = element_text(face = "bold"))
 
-# Scatter Plot Construction
-p5 <- FeatureScatter(seurat_obj, feature1 = "nCount_RNA", feature2 = "nFeature_RNA") +
-  labs(title = "UMI vs Genes Detected")
+# Apply bold title only to panels 3 and 4
+p4[[3]] <- p4[[3]] + theme(plot.title = element_text(face = "bold"))
+p4[[4]] <- p4[[4]] + theme(plot.title = element_text(face = "bold"))
 
-p6 <- FeatureScatter(seurat_obj, feature1 = "nCount_RNA", feature2 = "percent.mt") +
-  labs(title = "UMI vs Mitochondrial %")
 
-p7 <- FeatureScatter(seurat_obj, feature1 = "percent.mt", feature2 = "percent.ribo") +
-  labs(title = "Mitochondrial % vs Ribosomal %")
+ggsave(
+  file.path(
+    "3_output", RUN_ID, "qc-and-filtering", "plots", META_SAMPLE_NAME,
+    "03_qc_violins.png"
+  ),
+  plot = p4, width = 16, height = 4, dpi = 300
+)
 
+# --- Scatter Plot Construction ---
+# Plot UMI counts against gene counts.
+p5 <- FeatureScatter(
+  seurat_obj,
+  feature1 = "nCount_RNA", feature2 = "nFeature_RNA"
+) +
+  labs(
+    title = "UMI vs Genes Detected",
+    x = "nCount_RNA (K = 1,000)", y = "nFeature_RNA (K = 1,000)"
+  ) +
+  scale_x_continuous(
+    breaks = seq(0, max(seurat_obj$nCount_RNA), by = 5000),
+    labels = scales::label_number(scale_cut = cut_short_scale())
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, max(seurat_obj$nFeature_RNA), by = 1000),
+    labels = scales::label_number(scale_cut = cut_short_scale())
+  ) +
+  theme(
+    axis.text.x = element_text(size = 10, angle = 90, hjust = 1),
+    axis.text.y = element_text(size = 10),
+    legend.position = "none"
+  )
+
+# Plot UMI counts against mitochondrial percentage
+p6 <- FeatureScatter(
+  seurat_obj,
+  feature1 = "nCount_RNA", feature2 = "percent.mt"
+) +
+  labs(
+    title = "UMI vs Mitochondrial %",
+    x = "nCount_RNA (K = 1,000)", y = "percent.mt (%)"
+  ) +
+  scale_x_continuous(
+    breaks = seq(0, max(seurat_obj$nCount_RNA), by = 5000),
+    labels = scales::label_number(scale_cut = cut_short_scale())
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, max(seurat_obj$percent.mt), by = 10)
+  ) +
+  theme(
+    axis.text.x     = element_text(size = 10, angle = 90, hjust = 1),
+    axis.text.y     = element_text(size = 10),
+    legend.position = "none"
+  )
+
+# Plot mitochondrial percentage against ribosomal percentage
+p7 <- FeatureScatter(
+  seurat_obj,
+  feature1 = "percent.mt", feature2 = "percent.ribo"
+) +
+  labs(
+    title = "Mitochondrial % vs Ribosomal %",
+    x = "percent.mt (%)", y = "percent.ribo (%)"
+  ) +
+  scale_x_continuous(breaks = seq(0, max(seurat_obj$percent.mt), by = 10)) +
+  scale_y_continuous(breaks = seq(0, max(seurat_obj$percent.ribo), by = 5)) +
+  theme(
+    axis.text.x = element_text(size = 10, angle = 90, hjust = 1),
+    axis.text.y = element_text(size = 10),
+    legend.position = "none",
+  )
+
+# Assemble all three scatter plots into one figure.
 p_scatter <- p5 + p6 + p7
 
-ggsave("plots/04_qc_scatter.png", p_scatter, width = 15, height = 5, dpi = 300)
+ggsave(
+  file.path(
+    "3_output", RUN_ID, "qc-and-filtering", "plots", META_SAMPLE_NAME,
+    "04_qc_scatter.png"
+  ),
+  plot = p_scatter, width = 15, height = 5, dpi = 300
+)
 
-cat("\n→ EXAMINE plots/03_qc_violins.png and plots/04_qc_scatter.png\n")
+cat(
+  "\n→ EXAMINE plots 03_qc_violins.png and 04_qc_scatter.png in",
+  file.path(
+    "3_output", RUN_ID, "qc-and-filtering", "plots", META_SAMPLE_NAME
+  ), "\n"
+)
 cat("→ Look for:\n")
 cat("   - Bimodal distributions (good vs bad cells)\n")
 cat("   - Outliers in scatter plots\n")
 cat("   - Relationship between metrics\n\n")
 
 
-# ==============================================================================
-# --- 4. DEFINE THRESHOLDS (MANUAL ADJUSTMENT PHASE) ---
-# ==============================================================================
+# ****************************************************************************#
+# --- DEFINE THRESHOLDS (MANUAL ADJUSTMENT PHASE) ---
+# ****************************************************************************#
 # HOW TO SET THESE VALUES FOR ANY DATASET (VISUAL DECODING):
 #   1. nfeature_min / ncount_min (The Debris Floor): Look at the UMI vs Genes
 #      scatter. Find the dense upward curve. Set your minimums right above the
@@ -200,9 +297,9 @@ cat("  nCount_RNA: [", ncount_min, ",", ncount_max, "]\n")
 cat("  percent.mt: <", mt_thresh, "%\n\n")
 
 
-# ==============================================================================
-# --- 5. GENERATE CUTOFF THRESHOLD PLOTS ---
-# ==============================================================================
+# ****************************************************************************#
+# --- GENERATE CUTOFF THRESHOLD PLOTS ---
+# ****************************************************************************#
 # This block executes our data-driven quality gates, tagging cells as TRUE
 # (viable) or FALSE (debris/dead) based on the criteria set in Step 4.
 #
@@ -219,7 +316,7 @@ cat("  percent.mt: <", mt_thresh, "%\n\n")
 #   - If you see RED dots trapped inside the green bounding box in your saved
 #     plot, that is correct behavior! Those cells pass the gene/UMI count caps,
 #     but failed the hidden 3rd dimension: their mitochondrial load exceeded 10%.
-# ----------------------------------------------------------------------------
+
 
 # Create a temporary dataframe to store the QC metrics and filtering results
 qc_df <- seurat_obj@meta.data %>%
@@ -227,20 +324,18 @@ qc_df <- seurat_obj@meta.data %>%
   select(nCount_RNA, nFeature_RNA, percent.mt) %>%
   # Generate the pass_qc column based on the 5-point logical check
   mutate(
-    pass_qc = nCount_RNA >= ncount_min & # Keep cells with at least $ncount_min UMIs
-      nCount_RNA <= ncount_max & # Keep cells with at most $ncount_max UMIs
-      nFeature_RNA >= nfeature_min & # Keep cells with at least $nfeature_min genes
-      nFeature_RNA <= nfeature_max & # Keep cells with at most $nfeature_max genes
-      percent.mt < mt_thresh # Keep cells with less than $mt_thresh% mitochondrial reads
+    pass_qc = nCount_RNA >= ncount_min & # keep cells with at least $ncount_min UMIs
+      nCount_RNA <= ncount_max & # keep cells with at most $ncount_max UMIs
+      nFeature_RNA >= nfeature_min & # keep cells with at least $nfeature_min genes
+      nFeature_RNA <= nfeature_max & # keep cells with at most $nfeature_max genes
+      percent.mt < mt_thresh # keep cells with less than $mt_thresh% mito. reads
   )
 
-# Plot the 2D distribution with boundary overlays
 
+# Plot the 2D distribution with boundary overlays
 # --- Option A: Log-Scale Bounding Box Plot ---
 p8_log <- ggplot(qc_df, aes(
-  x = log10(nCount_RNA + 1),
-  y = log10(nFeature_RNA + 1),
-  color = pass_qc
+  x = log10(nCount_RNA + 1), y = log10(nFeature_RNA + 1), color = pass_qc
 )) +
   geom_point(alpha = 0.5, size = 1) +
   geom_vline(
@@ -264,11 +359,10 @@ p8_log <- ggplot(qc_df, aes(
   ) +
   theme_classic()
 
+
 # --- Option B: Linear-Scale Bounding Box Plot ---
 p8_linear <- ggplot(qc_df, aes(
-  x = nCount_RNA,
-  y = nFeature_RNA,
-  color = pass_qc
+  x = nCount_RNA, y = nFeature_RNA, color = pass_qc
 )) +
   geom_point(alpha = 0.5, size = 1) +
   geom_vline(
@@ -280,35 +374,47 @@ p8_linear <- ggplot(qc_df, aes(
     linetype = "dashed", color = "red"
   ) +
   scale_color_manual(values = c("TRUE" = "#06D6A0", "FALSE" = "#EF476F")) +
+  scale_x_continuous(
+    breaks = seq(0, max(qc_df$nCount_RNA), by = 5000),
+    labels = scales::label_number(scale_cut = cut_short_scale())
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, max(qc_df$nFeature_RNA), by = 1000),
+    labels = scales::label_number(scale_cut = cut_short_scale())
+  ) +
   labs(
     title = "Cell Filtering Thresholds (Linear Scale)",
     subtitle = paste0(
       sum(qc_df$pass_qc), " cells pass QC (",
       round(sum(qc_df$pass_qc) / nrow(qc_df) * 100, 1), "%)"
     ),
-    x = "Total Transcripts (UMI counts)",
-    y = "Unique Genes Detected",
+    x = "\nTotal Transcripts (UMI counts, K = 1,000)",
+    y = "Unique Genes Detected (K = 1,000)\n",
     color = "Pass QC"
   ) +
-  theme_classic()
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 # --- Save Visual Diagnostics to Disk ---
 ggsave(
-  "plots/05_filtering_thresholds_log.png",
-  p8_log,
-  width = 8, height = 7, dpi = 300
+  file.path(
+    "3_output", RUN_ID, "qc-and-filtering", "plots", META_SAMPLE_NAME,
+    "05_filtering_thresholds_log.png"
+  ),
+  plot = p8_log, width = 8, height = 7, dpi = 300
 )
 
 ggsave(
-  "plots/05_filtering_thresholds_linear.png",
-  p8_linear,
-  width = 8, height = 7, dpi = 300
+  file.path(
+    "3_output", RUN_ID, "qc-and-filtering", "plots", META_SAMPLE_NAME,
+    "05_filtering_thresholds_linear.png"
+  ),
+  plot = p8_linear, width = 8, height = 7, dpi = 300
 )
 
-
-# ==============================================================================
-# --- 6. REPORT FILTERING METRICS ---
-# ==============================================================================
+# ****************************************************************************#
+# --- REPORT FILTERING METRICS ---
+# ****************************************************************************#
 # This block audits your threshold configurations, generating a granular report
 # of exactly how many cells fell victim to each individual technical filter.
 #
@@ -346,9 +452,9 @@ cat(
 )
 
 
-# ==============================================================================
-# --- 7. AUTOMATED SAFETY GUARD CHECK ---
-# ==============================================================================
+# ****************************************************************************#
+# --- AUTOMATED SAFETY GUARD CHECK ---
+# ****************************************************************************#
 # This programmatic guardrail prevents manual data manipulation errors. It cross-
 # references your total attrition percentage against universal genomic standards.
 #
@@ -376,9 +482,10 @@ if (removal_pct > 30) {
 cells_before_cell_qc <- nrow(qc_df)
 
 
-# ==============================================================================
-# --- 8. APPLY SUBSETTING FILTERS ---
-# ==============================================================================
+
+# ****************************************************************************#
+# --- APPLY SUBSETTING FILTERS ---
+# ****************************************************************************#
 # Execution Phase: This is the point of no return. Up until this step, all numbers
 # were just passive visual predictions inside a temporary dataframe.
 #
@@ -400,3 +507,40 @@ seurat_obj <- subset(
 )
 
 cat("After filtering:", ncol(seurat_obj), "cells remaining\n")
+
+
+# ****************************************************************************#
+# SUMMARY & PIPELINE MILESTONE TRANSITION
+# ****************************************************************************#
+# WHERE WE STARTED:
+# Before entering this step, we had processed our dataset through automated
+# background clean-up filters (Steps 4, 5, and 6), which successfully left us
+# with a refined matrix of singlet droplets. However, these droplets still
+# contained an unknown mixture of highly viable living cells, dead or dying
+# cellular debris ("ghost cells"), and low-complexity technical fragments.
+#
+# WHAT WE HAVE ACCOMPLISHED:
+# In this step, we successfully established our final and most critical cell-
+# level safety net through data-driven Quality Control (QC). By mapping out
+# core biological sensors—such as mitochondrial load (percent.mt) and
+# transcriptional complexity (log10GenesPerUMI)—we performed a detailed visual
+# audit of our cell distributions. Instead of blindly trusting automated caps,
+# we drew precise, custom threshold lines directly through the cell clouds
+# on our diagnostic log and linear scatter plots. This multi-gate filter allowed
+# us to confidently slice away the necrotic, high-mitochondrial 5% tail and
+# low-complexity debris, ensuring our active cellular matrix represents strictly
+# healthy, metabolically viable singlet systems.
+#
+# WHERE WE ARE HEADING (STEP 8):
+# Our dataset has reached its definitive cell count, compressed in memory and
+# purified of low-quality barcodes. However, while our cells are clean, our
+# gene dimensions are still completely unvetted and cluttered with noise.
+#
+# Because thousands of genes are completely inactive in our targeted tissue or
+# were only captured in a tiny handful of cells, they act as massive, un-
+# informative computational weight that distorts statistical averages. In Step 8,
+# we will transition to Gene-Level Quality Control. We will calculate the global
+# prevalence profile of every gene across our verified cell pool and apply a
+# clean percentage threshold (keeping only genes detected in >= 0.1% of cells)
+# to purge rare artifacts and zero-count columns from our active feature space.
+# ****************************************************************************#
