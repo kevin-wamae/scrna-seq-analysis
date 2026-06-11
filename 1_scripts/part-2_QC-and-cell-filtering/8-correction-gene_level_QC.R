@@ -54,26 +54,47 @@ cat(
 )
 
 # Visualize global gene detection distributions
-p9 <- ggplot(gene_qc, aes(x = pct_cells_detected)) +
+p9 <- ggplot(
+  # Filter out genes with zero detection before plotting —
+  # log10(0) = -Inf which introduces infinite values and drops rows
+  gene_qc %>% filter(pct_cells_detected > 0),
+  aes(x = pct_cells_detected)
+) +
   geom_histogram(bins = 50, fill = "#118AB2", alpha = 0.7) +
-  geom_vline(xintercept = 0.1, linetype = "dashed", color = "red") +
-  scale_x_log10() +
+  # Use min_pct_cells variable instead of hardcoded value so the line
+  # always reflects the threshold actually set in the script
+  geom_vline(xintercept = min_pct_cells, linetype = "dashed", color = "red") +
+  scale_x_log10(
+    breaks = c(0.01, 0.1, 1, 10, 100),
+    labels = scales::label_number(suffix = "%")
+  ) +
   labs(
     title = "Gene Detection Across Cells",
-    subtitle = "Red line: Defined % of cells threshold",
+    subtitle = paste0("Red line: ", min_pct_cells, "% detection threshold"),
     x = "% of Cells Expressing Gene (log scale)",
     y = "Number of Genes"
   ) +
   theme_classic()
 
-ggsave("plots/06_gene_detection.png", p9, width = 8, height = 5, dpi = 300)
+# --- Save Visual Diagnostics to Disk ---
+ggsave(
+  file.path(
+    "3_output", RUN_ID, "qc-and-filtering", "plots", META_SAMPLE_NAME,
+    "06_gene_detection.png"
+  ),
+  plot = p9, width = 8, height = 5, dpi = 300
+)
 
-cat("→ EXAMINE plots/06_gene_detection.png\n")
+# --- Console Status Update ---
+cat("→ EXAMINE file:", file.path(
+  "3_output", RUN_ID, "qc-and-filtering", "plots", META_SAMPLE_NAME,
+  "06_gene_detection.png"
+), "\n")
 cat("   Choose threshold based on where detection drops off\n\n")
 
 
 # ==============================================================================
-# --- generic visual plot interpretation guide ---
+# --- GENERIC VISUAL PLOT INTERPRETATION GUIDE ---
 # What you are seeing in this histogram profile (06_gene_detection.png):
 #   - Axis Scales: The y-axis tracks the total "Number of Genes". The x-axis uses
 #     a log10 scale showing the "% of Cells Expressing a Gene", ranging from the
@@ -135,3 +156,39 @@ seurat_obj <- seurat_obj[gene_qc$gene[genes_to_keep], ]
 # --- 6. Final Feature Validation Check ---
 # Confirms the final clean matrix dimensions available for downstream analysis.
 cat("After gene filtering:", nrow(seurat_obj), "genes remaining in memory\n")
+
+
+# ****************************************************************************#
+# SUMMARY & PIPELINE MILESTONE TRANSITION
+# ****************************************************************************#
+# WHERE WE STARTED:
+# Before entering this step, we completed our cell-level quality control (Step 7)
+# and successfully established a clean, high-viability population of single
+# cell barcodes. However, while our cell columns were pristine, our gene rows
+# were still completely unvetted—containing thousands of rare technical fragments,
+# zero-variance features, and extracellular contaminants like loose Hemoglobin.
+#
+# WHAT WE HAVE ACCOMPLISHED:
+# In this step, we shifted our focus from cell health to feature utility by
+# executing a robust Gene-Level Quality Control filter. We audited the global
+# expression prevalence of every gene across our verified cell pool. Using a
+# log-scaled distribution histogram (06_gene_detection.png), we identified a
+# massive long-tail of low-frequency transcripts captured due to sampling luck
+# rather than functional biology. By applying a lenient 0.1% detection floor
+# and a hard biological block against red-blood-cell-derived Hemoglobin transcripts
+# (!is_hb), we successfully sliced away thousands of uninformative, zero-variance
+# background rows without risking the loss of rare cell-type markers.
+#
+# WHERE WE ARE HEADING (STEP 9):
+# Our dataset is now fully purified along both dimensions: we have optimized
+# cell columns and a sanitized, high-signal gene feature matrix. However, the
+# raw counts inside this clean matrix are still heavily biased by variable
+# technical sequencing depths across individual cells.
+#
+# In Step 9, we will transition out of the quality control phase and enter
+# downstream processing by running Log-Normalization and Variable Feature Selection.
+# We will scale all cellular transcript volumes to a standard factor of 10,000
+# UMIs to make them statistically comparable, apply a log-transformation to
+# stabilize variance, and deploy a variance-stabilizing transformation (vst) to
+# select the top 2,000 highly variable genes that drive true biological clustering.
+# ****************************************************************************#
