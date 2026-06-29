@@ -11,14 +11,44 @@ META_SRA_ID <- "SRR14575500"
 META_CONDITION <- "Healthy"
 META_PATIENT_ID <- "Donor_1"
 
-# the directory containing the 10x files (from Cell Ranger)
+# The directory containing the 10x files (from Cell Ranger)
 CELLRANGER_INPUT <- paste0(
   "2_input/cellranger-matrix-counts/GSE174609_All_Participants/",
   META_SAMPLE_NAME
 )
 
-# the batch/run identifier and ouput prefix
-RUN_ID <- "2026-06-09-brown-job-3058993"
+# The date-stamped job run ID (from HPC scheduler) for tracking
+RUN_ID <- "2026_06_09_brown_job_3058993"
+
+
+# --- DYNAMIC OUTPUT PATH REGISTRATION ---
+# ****************************************************************************#
+# Dynamically construct paths inside a date-stamped job run ID.
+data_out_dir <- file.path(
+  "3_output", RUN_ID, "qc-and-filtering", "filtered_data", META_SAMPLE_NAME
+)
+metrics_out_dir <- file.path(
+  "3_output", RUN_ID, "qc-and-filtering", "metrics"
+)
+plots_out_dir <- file.path(
+  "3_output", RUN_ID, "qc-and-filtering", "plots", META_SAMPLE_NAME
+)
+
+
+# --- AUTOMATED DIRECTORY PROVISIONING ---
+# ****************************************************************************#
+# Construct the folder trees on disk:
+#   - `recursive = TRUE`: Instructs R to build missing parent paths on the fly
+#   - `showWarnings = FALSE`: Prevents the script from halting or throwing noise
+#      if the directories were already initialized by an earlier script step
+dir.create(data_out_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(metrics_out_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(plots_out_dir, recursive = TRUE, showWarnings = FALSE)
+
+cat("✓ Output directories securely synchronized to disk:\n")
+cat("  • Data Master Archive:", data_out_dir, "\n")
+cat("  • Pipeline Metrics Ledger:", metrics_out_dir, "\n")
+cat("  • Visual Diagnostic Canvas:", plots_out_dir, "\n\n")
 
 
 # --- THE CRITICAL MATRIX DECISION: RAW VS FILTERED ---
@@ -74,18 +104,6 @@ seurat_obj <- CreateSeuratObject(
 # essential for downstream analyses when merging multiple patient batches or
 # performing multi-condition differential expression (e.g., Healthy vs Disease).
 
-# Using base R
-# seurat_obj$sample_id <- "Healthy_1"
-# seurat_obj$sra_id <- "SRR14575500"
-# seurat_obj$condition <- "Healthy"
-# seurat_obj$patient_id <- "Donor_1"
-# seurat_obj$time_point <- NA
-
-# PERFORMANCE NOTE:
-# Mutating the `@meta.data` dataframe directly using dplyr is significantly
-# faster than assigning individual columns one-by-one using the `$` operator,
-# as it executes all annotations in a single, unified memory block update.
-
 seurat_obj@meta.data <- seurat_obj@meta.data %>%
   mutate(
     sample_id  = META_SAMPLE_NAME,
@@ -100,3 +118,41 @@ seurat_obj@meta.data <- seurat_obj@meta.data %>%
 # ****************************************************************************#
 cat("Loaded:", ncol(seurat_obj), "droplets ×", nrow(seurat_obj), "genes\n")
 cat("(Most are empty - EmptyDrops will filter in Step 4)\n")
+
+
+# ****************************************************************************#
+# SUMMARY & PIPELINE MILESTONE TRANSITION
+# ****************************************************************************#
+# WHERE WE STARTED:
+# Before entering this step, we initialized our computational workspace (Step 1)
+# by loading our specialized genomic libraries, pinning a global reproducible
+# random seed, and aligning our high-performance Pixi environment packages.
+# At that stage, our project existed only as raw, unparsed Cell Ranger output
+# matrices stored blindly on the cluster disk.
+#
+# WHAT WE HAVE ACCOMPLISHED:
+# In this step, we successfully completed our data ingestion and environment
+# isolation milestone. We built a dynamic path provisioning framework rooted in
+# our active HPC scheduler `RUN_ID`, creating parallel, sample-isolated folder
+# tracks on disk. We made a deliberate architectural choice to load the raw
+# feature matrix rather than Cell Ranger's pre-filtered matrix, retaining
+# every captured microfluidic barcode with absolute fidelity. By initializing a
+# master Seurat object with zero filtering constraints (`min.cells = 0`,
+# `min.features = 0`) and mutating sample annotations into a single database
+# memory block, we preserved the raw data structure alongside crucial
+# experimental metadata.
+#
+# WHERE WE ARE HEADING (STEP 3):
+# Our dataset is now successfully instantiated in R, housing over a million
+# captured barcodes alongside our global clinical metadata tags. However, we
+# are currently holding a massive, raw, and un-vetted sequencing dump.
+#
+# Because the microfluidic channel captures everything it touches, the
+# overwhelming majority of these million barcodes represent fluid-only, empty
+# droplets or free-floating background molecules. Before we can deploy advanced
+# filtering algorithms, we must understand the baseline noise profile of this
+# specific run. In Step 3, we will perform an initial diagnostic exploration. We
+# will measure the global sparsity of the expression matrix and audit the UMI
+# count distributions to map out
+# the technical footprints of our sample before initiating data purification.
+# ****************************************************************************#
