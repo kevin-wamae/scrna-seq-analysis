@@ -24,14 +24,14 @@ RUN_ID <- "2026_06_09_brown_job_3058993"
 # --- DYNAMIC OUTPUT PATH REGISTRATION ---
 # ****************************************************************************#
 # Dynamically construct paths inside a date-stamped job run ID.
-data_out_dir <- file.path(
-  "3_output", RUN_ID, "qc-and-filtering", "filtered_data", META_SAMPLE_NAME
+PLOTS_OUT_DIR <- file.path(
+  "3_output", RUN_ID, "qc_and_filtering", "plots", META_SAMPLE_NAME
 )
-metrics_out_dir <- file.path(
-  "3_output", RUN_ID, "qc-and-filtering", "metrics"
+DATA_OUT_DIR <- file.path(
+  "3_output", RUN_ID, "qc_and_filtering", "filtered_data", META_SAMPLE_NAME
 )
-plots_out_dir <- file.path(
-  "3_output", RUN_ID, "qc-and-filtering", "plots", META_SAMPLE_NAME
+METRICS_OUT_DIR <- file.path(
+  "3_output", RUN_ID, "qc_and_filtering", "metrics", META_SAMPLE_NAME
 )
 
 
@@ -41,14 +41,14 @@ plots_out_dir <- file.path(
 #   - `recursive = TRUE`: Instructs R to build missing parent paths on the fly
 #   - `showWarnings = FALSE`: Prevents the script from halting or throwing noise
 #      if the directories were already initialized by an earlier script step
-dir.create(data_out_dir, recursive = TRUE, showWarnings = FALSE)
-dir.create(metrics_out_dir, recursive = TRUE, showWarnings = FALSE)
-dir.create(plots_out_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(DATA_OUT_DIR, recursive = TRUE, showWarnings = FALSE)
+dir.create(METRICS_OUT_DIR, recursive = TRUE, showWarnings = FALSE)
+dir.create(PLOTS_OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 cat("✓ Output directories securely synchronized to disk:\n")
-cat("  • Data Master Archive:", data_out_dir, "\n")
-cat("  • Pipeline Metrics Ledger:", metrics_out_dir, "\n")
-cat("  • Visual Diagnostic Canvas:", plots_out_dir, "\n\n")
+cat("  • Data Master Archive:", DATA_OUT_DIR, "\n")
+cat("  • Pipeline Metrics Ledger:", METRICS_OUT_DIR, "\n")
+cat("  • Visual Diagnostic Canvas:", PLOTS_OUT_DIR, "\n\n")
 
 
 # --- THE CRITICAL MATRIX DECISION: RAW VS FILTERED ---
