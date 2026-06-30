@@ -69,7 +69,6 @@ cat("Median UMI per droplet:", median(umi_counts), "\n")
 # IMPORTANT: This >500 number is purely a manual sanity check! Do NOT use it
 # as a hard filter yet. Step 4 (EmptyDrops) will use deep statistical profiling
 # to save valid, low-RNA cells (like platelets) while dropping the background.
-
 cat(
     "Droplets with >500 UMI:", sum(umi_counts > 500),
     "(likely cells, will be validated by EmptyDrops)\n"
@@ -88,9 +87,9 @@ cat(
 # In this step, we ran a diagnostic diagnostic audit. We uncovered a massive
 # 99.9% global sparsity and a baseline median UMI of ~1. Rather than treating
 # this as an experimental failure, our exploration demystified these values as
-# the expected signature of an unfiltered raw dataset dominated by ambient noise.
-# By checking for droplets with >500 UMIs, we proved that a viable, high-count
-# population of real cells is hiding within the matrix.
+# the expected signature of an unfiltered raw dataset dominated by ambient
+# noise. By checking for droplets with >500 UMIs, we proved that a viable,
+# high-count population of real cells is hiding within the matrix.
 #
 # WHERE WE ARE HEADING (STEP 4):
 # Right now, our dataset is still a mixture of a million empty soup droplets and
