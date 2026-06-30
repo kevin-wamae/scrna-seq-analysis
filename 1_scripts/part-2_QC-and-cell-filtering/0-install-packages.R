@@ -1,6 +1,6 @@
-################################################################################
+# ****************************************************************************#
 # Installation: Required packages for single-sample QC
-################################################################################
+# ****************************************************************************#
 
 # --- THE INFRASTRUCTURE REQUIREMENTS ---
 # Single-cell QC depends on tools spanning different software ecosystems. To
@@ -12,9 +12,10 @@
 #
 # REPRODUCIBILITY & ECOSYSTEM BENEFIT:
 # By wrapping installations inside an `if (!requireNamespace(...))` conditional
-# structure, the script validates your local environment first. It only downloads
-# a package if it is missing, preventing your script from wasting compute hours
-# and bandwidth re-downloading active libraries during repetitive runs.
+# structure, the script validates your local environment first. It only
+# downloads a package if it is missing, preventing your script from wasting
+# compute hours and bandwidth re-downloading active libraries during
+# repetitive runs.
 
 
 # --- 1. Establish CRAN Network Target ---
@@ -41,14 +42,14 @@ if (!requireNamespace("SeuratObject", quietly = TRUE)) {
 
 # --- 3. Conditional Data Handling & Visualization Engines ---
 # For smaller utility packages, we evaluate them against a vector loop.
-# This programmatically builds a custom whitelist (`missing_cran`) of only what
+# This programmatically builds a custom whitelist (`MISSING_CRAN`) of only what
 # your machine lacks, allowing CRAN to resolve shared parallel dependencies
 # all at once.
-cran_pkgs <- c("ggplot2", "patchwork", "dplyr")
-missing_cran <- cran_pkgs[!sapply(cran_pkgs, requireNamespace, quietly = TRUE)]
+CRAN_PKGS <- c("ggplot2", "patchwork", "dplyr")
+MISSING_CRAN <- CRAN_PKGS[!sapply(CRAN_PKGS, requireNamespace, quietly = TRUE)]
 
-if (length(missing_cran) > 0) {
-  install.packages(missing_cran)
+if (length(MISSING_CRAN) > 0) {
+  install.packages(MISSING_CRAN)
 }
 
 
@@ -60,13 +61,14 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) {
   install.packages("BiocManager")
 }
 
+
 # Identify which specific Bioconductor packages are missing:
 # - `DropletUtils`: Computes statistical profiles to find true cell boundaries.
 # - `scDblFinder`: Leverages machine learning to flag in-silico doublets.
 # - `SingleCellExperiment`: Provides the foundation matrix layout model that
 #    both DropletUtils and scDblFinder use to run their matrix calculations.
-bioc_pkgs <- c("DropletUtils", "scDblFinder", "SingleCellExperiment")
-missing_bioc <- bioc_pkgs[!sapply(bioc_pkgs, requireNamespace, quietly = TRUE)]
+BIOC_PKGS <- c("DropletUtils", "scDblFinder", "SingleCellExperiment")
+missing_bioc <- BIOC_PKGS[!sapply(BIOC_PKGS, requireNamespace, quietly = TRUE)]
 
 if (length(missing_bioc) > 0) {
   # `update = FALSE, ask = FALSE` stops Bioconductor from pausing your script
