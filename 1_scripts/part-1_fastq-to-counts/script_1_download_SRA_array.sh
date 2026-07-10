@@ -7,7 +7,7 @@
 #SBATCH -o logs/job.%A_%a.out
 #SBATCH -e logs/job.%A_%a.err
 #SBATCH --mail-type=ALL
-#SBATCH --mail-user=kevin_wamae@brown.edu
+#SBATCH --mail-user=''
 #SBATCH --array=1-12%4
 #*********************************************************
 
