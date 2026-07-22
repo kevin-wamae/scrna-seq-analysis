@@ -18,7 +18,7 @@ name = "scrna-seq-analysis"
 #--------------------------------------------------------------------
 # - linux-64 for HPCs and local linux laptops
 # - osx-64 for local development on MacOS
-platforms = ["linux-64", "osx-64"]
+platforms = ["linux-64"]
 
 
 #--------------------------------------------------------------------
@@ -31,10 +31,8 @@ version = "0.1.0"
 #--------------------------------------------------------------------
 # Define tasks for the analysis
 #--------------------------------------------------------------------
-# Cell Ranger tasks (assumes cellranger in PATH)
-cellranger-count = "cellranger count --id=sample --transcriptome=refdata --fastqs=fastqs/"
-download_SRA = { cmd = "prefetch $SRR_ID && fasterq-dump $SRR_ID --split-files --threads 8", env = { SRR_ID = "SRR123456" } }
-srun = "srun --ntasks=1 --cpus-per-task=4 --mem=16G --time=01:00:00 --pty bash"
+# use srun to create an interactive bash session
+srun = "srun --ntasks=1 --cpus-per-task=4 --mem=16G --time=02:00:00 --pty bash"
 
 #--------------------------------------------------------------------
 # Part 1: Data download and quality control
@@ -108,6 +106,6 @@ r-rlang = "*"                 # Grammar of Graphics for R
 # Environments for different analysis stages
 #--------------------------------------------------------------------
 part1 = ["part1-feature"]
-part2 = ["part2-feature"]
-# part3 = ["part3-feature"]
-# part4 = ["part4-feature"]
+part2 = { features = ["part2-feature"], solve-group = "downstream" }
+# part3 = { features = ["part3-feature"], solve-group = "downstream" }
+# part4 = { features = ["part4-feature"], solve-group = "downstream" }
