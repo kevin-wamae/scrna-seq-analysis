@@ -5,19 +5,46 @@
 
 # --- DEFINE PATHS/VARIABLES ---
 # ****************************************************************************#
-# Define sample metadata (change these variables accordingly)
-META_SAMPLE_NAME <- "Healthy_1"
-META_SRA_ID <- "SRR14575500"
-META_CONDITION <- "Healthy"
-META_PATIENT_ID <- "Donor_1"
+
+# sample metadata definition
+# ----------------------------------------------------------------------------#
+# method 1 - manual definition (change these variables accordingly)
+# (META_SAMPLE_NAME <- "Healthy_1")
+# (META_SRA_ID <- "SRR14575500")
+# (META_CONDITION <- "Healthy")
+# (META_PATIENT_ID <- "Donor_1")
+
+
+# method 2 - read from file (change this line accordingly)
+SAMPLE_ROW <- subset(
+  read.delim("2_input/sample-metadata/sample_names.tsv",
+    stringsAsFactors = FALSE
+  ),
+  sample_name == "Healthy_2"
+)
+
+META_SAMPLE_NAME <- SAMPLE_ROW$sample_name
+META_SRA_ID <- SAMPLE_ROW$sra_id
+META_CONDITION <- SAMPLE_ROW$condition
+META_PATIENT_ID <- SAMPLE_ROW$patient_id
+
+cat("Sample metadata loaded:\n")
+cat("  Sample:   ", META_SAMPLE_NAME, "\n")
+cat("  SRA ID:   ", META_SRA_ID, "\n")
+cat("  Condition:", META_CONDITION, "\n")
+cat("  Patient:  ", META_PATIENT_ID, "\n\n")
+
 
 # The directory containing the 10x files (from Cell Ranger)
+# ----------------------------------------------------------------------------#
 CELLRANGER_INPUT <- paste0(
   "2_input/cellranger-matrix-counts/GSE174609_All_Participants/",
   META_SAMPLE_NAME
 )
 
+
 # The date-stamped job run ID (from HPC scheduler) for tracking
+# ----------------------------------------------------------------------------#
 RUN_ID <- "2026_06_09_brown_job_3058993"
 
 
@@ -72,14 +99,18 @@ cat("  • Visual Diagnostic Canvas:", PLOTS_OUT_DIR, "\n\n")
 # customized, high-precision purification that outperforms Cell Ranger.
 
 # OPTION A: Load RAW matrix (what this tutorial demonstrates)
-counts <- Read10X(
-  data.dir = file.path(CELLRANGER_INPUT, "raw_feature_bc_matrix")
-)
+# LOG_STEP(<message>, { <code block> }) — prints the start message, runs the
+# block, times it, prints "✓ Done in Xs", and returns the block's result.
+# Assign it like a normal expression: RESULT <- LOG_STEP("msg...", { ... })
+# The LOG_STEP() function is loaded in Step 1
+COUNTS <- LOG_STEP("Loading 10x matrix (this may take some time)...", {
+  Read10X(data.dir = file.path(CELLRANGER_INPUT, "raw_feature_bc_matrix"))
+})
 
 # # OPTION B: Load FILTERED matrix (alternative)
-# counts <- Read10X(
-#   data.dir = file.path(CELLRANGER_INPUT, "filtered_feature_bc_matrix")
-# )
+# COUNTS <- LOG_STEP("Loading 10x matrix...", {
+#   Read10X(data.dir = file.path(CELLRANGER_INPUT, "filtered_feature_bc_matrix"))
+# })
 
 
 # --- CREATE SEURAT OBJECT ---
@@ -90,8 +121,8 @@ counts <- Read10X(
 # cells here, tools like SoupX and EmptyDrops would lack the background
 # baseline data they need to estimate contamination accurately.
 
-seurat_obj <- CreateSeuratObject(
-  counts = counts,
+SEURAT_OBJ <- CreateSeuratObject(
+  counts = COUNTS,
   project = META_SAMPLE_NAME,
   min.cells = 0, # Explicitly do NOT filter genes yet
   min.features = 0 # Explicitly do NOT filter cells yet
@@ -104,7 +135,7 @@ seurat_obj <- CreateSeuratObject(
 # essential for downstream analyses when merging multiple patient batches or
 # performing multi-condition differential expression (e.g., Healthy vs Disease).
 
-seurat_obj@meta.data <- seurat_obj@meta.data %>%
+SEURAT_OBJ@meta.data <- SEURAT_OBJ@meta.data %>%
   mutate(
     sample_id  = META_SAMPLE_NAME,
     sra_id     = META_SRA_ID,
@@ -116,7 +147,7 @@ seurat_obj@meta.data <- seurat_obj@meta.data %>%
 
 # --- DATASET DIMENSIONS QUICK CHECK ---
 # ****************************************************************************#
-cat("Loaded:", ncol(seurat_obj), "droplets ×", nrow(seurat_obj), "genes\n")
+cat("Loaded:", ncol(SEURAT_OBJ), "droplets ×", nrow(SEURAT_OBJ), "genes\n")
 cat("(Most are empty - EmptyDrops will filter in Step 4)\n")
 
 
