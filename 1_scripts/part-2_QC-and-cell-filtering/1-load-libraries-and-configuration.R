@@ -91,3 +91,32 @@ if (packageVersion("Seurat") >= "5.0.0") {
 } else {
     warning("Please upgrade to Seurat 5 for this tutorial")
 }
+
+
+# --- PIPELINE LOGGING UTILITY ---
+# ****************************************************************************#
+# Several steps in this pipeline (EmptyDrops, SoupX, scDblFinder, Read10X on
+# large matrices) can run for several minutes with no console output. Without
+# feedback, this looks indistinguishable from a hang. LOG_STEP() prints a
+# start message, runs the supplied code, times it, and prints a "Done in Xs"
+# message when it finishes — flushing stdout immediately so messages appear
+# on screen right away, even when running non-interactively (Rscript, slurm
+# logs), where R would otherwise buffer output until the call finishes.
+#
+# USAGE:
+#   COUNTS <- LOG_STEP("Loading 10x matrix...", {
+#     Read10X(data.dir = file.path(CELLRANGER_INPUT, "raw_feature_bc_matrix"))
+#   })
+LOG_STEP <- function(msg, expr) {
+    message(msg)
+    flush(stdout())
+
+    ELAPSED <- system.time({
+        RESULT <- eval.parent(substitute(expr))
+    })
+
+    message(sprintf("✓ Done in %.1f seconds", ELAPSED["elapsed"]))
+    flush(stdout())
+
+    RESULT
+}
