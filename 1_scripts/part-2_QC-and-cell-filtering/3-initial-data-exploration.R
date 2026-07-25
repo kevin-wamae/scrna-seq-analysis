@@ -6,8 +6,8 @@
 # --- BASIC DIMENSIONS ---
 # ****************************************************************************#
 # Tracks the starting size of the raw, unfiltered matrix.
-cat("Total droplets:", ncol(seurat_obj), "\n")
-cat("Total genes:", nrow(seurat_obj), "\n")
+cat("Total droplets:", ncol(SEURAT_OBJ), "\n")
+cat("Total genes:", nrow(SEURAT_OBJ), "\n")
 
 
 # --- MATRIX SPARSITY ANALYSIS ---
@@ -33,18 +33,18 @@ cat("Total genes:", nrow(seurat_obj), "\n")
 # empty zeros. Seurat uses a "Sparse Matrix" (dgCMatrix) which only remembers
 # the coordinates of non-zero entries, keeping computational overhead lean.
 
-sparsity <- 1 - (
-    sum(LayerData(seurat_obj, layer = "counts") > 0) /
-        (nrow(seurat_obj) * ncol(seurat_obj))
+SPARSITY <- 1 - (
+    sum(LayerData(SEURAT_OBJ, layer = "counts") > 0) /
+        (nrow(SEURAT_OBJ) * ncol(SEURAT_OBJ))
 )
-cat("Matrix sparsity:", round(sparsity * 100, 1), "%\n")
+cat("Matrix SPARSITY:", round(SPARSITY * 100, 1), "%\n")
 
 
 # --- INITIAL UMI DISTRIBUTIONS ---
 # ****************************************************************************#
 # Calculates the total raw transcripts (UMIs) captured per droplet.
-umi_counts <- colSums(LayerData(seurat_obj, layer = "counts"))
-cat("Median UMI per droplet:", median(umi_counts), "\n")
+UMI_COUNTS <- colSums(LayerData(SEURAT_OBJ, layer = "counts"))
+cat("Median UMI per droplet:", median(UMI_COUNTS), "\n")
 
 # RESOLVING THE "MEDIAN UMI = 1 or another tiny number" PARADOX:
 # If you see a Median UMI of 1 (or another tiny number), do not panic! This is
@@ -70,7 +70,7 @@ cat("Median UMI per droplet:", median(umi_counts), "\n")
 # as a hard filter yet. Step 4 (EmptyDrops) will use deep statistical profiling
 # to save valid, low-RNA cells (like platelets) while dropping the background.
 cat(
-    "Droplets with >500 UMI:", sum(umi_counts > 500),
+    "Droplets with >500 UMI:", sum(UMI_COUNTS > 500),
     "(likely cells, will be validated by EmptyDrops)\n"
 )
 
