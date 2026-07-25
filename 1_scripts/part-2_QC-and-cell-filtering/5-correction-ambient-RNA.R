@@ -33,13 +33,13 @@
 # --- PREPARE SoupX CHANNEL ---
 # ****************************************************************************#
 # We feed SoupX two distinct components:
-# - `tod` (Table of Droplets): The completely raw, unfiltered count matrix
-#   containing ALL barcodes (saved in Step 4) used to establish the soup profile.
-# - `toc` (Table of Cells): The purified count matrix containing only the
+# - `TOD` (Table of Droplets): The completely raw, unfiltered count matrix
+#   containing ALL barcodes (saved in Step 4) used to establish the soup profile
+# - `TOC` (Table of Cells): The purified count matrix containing only the
 #   validated cell barcodes that passed Step 4's EmptyDrops filter.
-tod <- raw_counts_all_droplets
-toc <- LayerData(seurat_obj, layer = "counts")
-sc <- SoupChannel(tod = tod, toc = toc, calcSoupProfile = TRUE)
+TOD <- RAW_COUNTS_ALL_DROPLETS
+TOC <- LayerData(SEURAT_OBJ, layer = "counts")
+SC <- SoupChannel(tod = TOD, toc = TOC, calcSoupProfile = TRUE)
 
 
 # --- RAPID CLUSTERING FOR BACKGROUND CALIBRATION ---
@@ -59,18 +59,20 @@ sc <- SoupChannel(tod = tod, toc = toc, calcSoupProfile = TRUE)
 #   5. FindNeighbors: Builds an SNN graph connecting cells with similar PCs
 #   6. FindClusters: Uses the Louvain algorithm to partition the SNN graph
 
-temp_obj <- seurat_obj %>%
-  NormalizeData(verbose = FALSE) %>%
-  FindVariableFeatures(nfeatures = 2000, verbose = FALSE) %>%
-  ScaleData(verbose = FALSE) %>%
-  RunPCA(npcs = 30, verbose = FALSE) %>%
-  FindNeighbors(dims = 1:30, verbose = FALSE) %>%
-  FindClusters(resolution = 0.8, verbose = FALSE)
+TEMP_OBJ <- LOG_STEP("Clustering cells for SoupX background calibration...", {
+  SEURAT_OBJ %>%
+    NormalizeData(verbose = FALSE) %>%
+    FindVariableFeatures(nfeatures = 2000, verbose = FALSE) %>%
+    ScaleData(verbose = FALSE) %>%
+    RunPCA(npcs = 30, verbose = FALSE) %>%
+    FindNeighbors(dims = 1:30, verbose = FALSE) %>%
+    FindClusters(resolution = 0.8, verbose = FALSE)
+})
 
 # Map assignments: Link cluster numbers with barcodes and pass to SoupX
-sc <- setClusters(
-  sc,
-  setNames(as.character(temp_obj$seurat_clusters), colnames(temp_obj))
+SC <- setClusters(
+  SC,
+  setNames(as.character(TEMP_OBJ$seurat_clusters), colnames(TEMP_OBJ))
 )
 
 
@@ -82,20 +84,22 @@ sc <- setClusters(
 # contamination fraction (Rho).
 # Wrapping this in a `tryCatch` block ensures that if your sample is so clean
 # that the math cannot isolate a background signal, the code won't crash.
-sc <- tryCatch(
-  {
-    autoEstCont(sc, verbose = FALSE)
-  },
-  error = function(e) {
-    cat("Note: autoEstCont failed to find contamination signatures\n")
-    sc$fit$rho <- NULL
-    return(sc)
-  }
-)
 
+SC <- LOG_STEP("Estimating ambient RNA contamination (SoupX)...", {
+  tryCatch(
+    {
+      autoEstCont(SC, verbose = FALSE)
+    },
+    error = function(e) {
+      cat("Note: autoEstCont failed to find contamination signatures\n")
+      SC$fit$rho <- NULL
+      return(SC)
+    }
+  )
+})
 
 # Save the estimated fraction of ambient RNA contamination
-contamination_fraction <- sc$fit$rho
+CONTAMINATION_FRACTION <- SC$fit$rho
 
 
 # --- EVALUATE RUNNING METRICS & RANGES ---
@@ -110,15 +114,15 @@ contamination_fraction <- sc$fit$rho
 
 cat(
   "Contamination fraction:",
-  ifelse(is.null(contamination_fraction), "NULL (very clean sample)",
-    paste0(round(contamination_fraction * 100, 2), "%")
+  ifelse(is.null(CONTAMINATION_FRACTION), "NULL (very clean sample)",
+    paste0(round(CONTAMINATION_FRACTION * 100, 2), "%")
   ), "\n"
 )
 
 
 # --- DECODING A "NULL" CONTAMINATION FRACTION ---
 # WHAT A "NULL" RESULT MEANS:
-# If `contamination_fraction` returns `NULL`, it indicates that the automated
+# If `CONTAMINATION_FRACTION` returns `NULL`, it indicates that the automated
 # estimation engine (`autoEstCont`) could not locate a statistically viable
 # ambient background signature across your cell clusters.
 #
@@ -131,10 +135,11 @@ cat(
 #      the algorithm relies on to anchor and measure ambient leakage.
 #
 # HOW TO HANDLE IT IN ANY DATASET:
-# A `NULL` result is an excellent sign. It means your sample is cleanly preserved
-# and does not require background subtraction. Attempting to force an arbitrary
-# correction value on a `NULL` sample risks introducing artificial noise and
-# eroding genuine biological transcripts. Safely skip correction and proceed.
+# A `NULL` result is an excellent sign. It means your sample is cleanly
+# preserved and does not require background subtraction. Attempting to force
+# an arbitrary correction value on a `NULL` sample risks introducing artificial
+# noise and eroding genuine biological transcripts. Safely skip correction and
+# proceed.
 
 
 # --- 5. Data-Driven Correction Decision ---
@@ -155,24 +160,24 @@ cat(
 #   - Fraction < 5% or NULL -> Skip correction to preserve true raw biology.
 #   - Fraction >= 5%        -> Apply correction to scrub ambient noise.
 
-if (is.null(contamination_fraction) || contamination_fraction < 0.05) {
+if (is.null(CONTAMINATION_FRACTION) || CONTAMINATION_FRACTION < 0.05) {
   cat("→ Contamination is NULL or <5% - skipping SoupX correction\n")
   cat("   Your sample is clean! Proceeding with original counts.\n")
 } else {
-  cat("→ Contamination is", round(contamination_fraction * 100, 2), "% (≥5%)\n")
+  cat("→ Contamination is", round(CONTAMINATION_FRACTION * 100, 2), "% (≥5%)\n")
   cat("   Applying SoupX correction...\n")
 
   # `adjustCounts` safely subtracts the background ambient counts from the
   # expression matrix and outputs a cleaned, integer-rounded matrix.
   suppressWarnings({
-    corrected_counts <- adjustCounts(sc)
+    CORRECTED_COUNTS <- adjustCounts(SC)
   })
 
   # Inject the corrected matrix right back into the Seurat object's count layer
-  seurat_obj <- SetAssayData(
-    seurat_obj,
+  SEURAT_OBJ <- SetAssayData(
+    SEURAT_OBJ,
     layer = "counts",
-    new.data = corrected_counts
+    new.data = CORRECTED_COUNTS
   )
   cat("   ✓ SoupX correction applied\n")
 }
