@@ -37,14 +37,12 @@
 # correction (Step 5). Cell Ranger's internal script has already completed a
 # basic empty droplet evacuation. Skip directly to Step 6 (Doublet Detection).
 
-
 # Convert Seurat object to SingleCellExperiment for EmptyDrops processing
-sce <- as.SingleCellExperiment(seurat_obj)
+SCE <- as.SingleCellExperiment(SEURAT_OBJ)
 
 # Track initial benchmarks for downstream pipeline tracking
-initial_droplet_count <- ncol(sce)
-initial_gene_count <- nrow(sce)
-
+INITIAL_DROPLET_COUNT <- ncol(SCE)
+INITIAL_GENE_COUNT <- nrow(SCE)
 
 # --- Run EmptyDrops ---
 # - `lower = 100`: The empirical "sweet spot" for 10x chemistry. Barcodes with
@@ -54,12 +52,15 @@ initial_gene_count <- nrow(sce)
 #   lower threshold anyway. If a droplet with 80 UMIs has a specific gene mix
 #   that differs drastically from the soup, it can be rescued as a valid cell.
 set.seed(100)
-empty_results <- emptyDrops(
-  m = counts(sce),
-  lower = 100,
-  niters = 10000,
-  test.ambient = TRUE
-)
+
+EMPTY_RESULTS <- LOG_STEP("Running EmptyDrops (this can take some time)...", {
+  emptyDrops(
+    m = counts(SCE),
+    lower = 100,
+    niters = 10000,
+    test.ambient = TRUE
+  )
+})
 
 
 # --- STATISTICAL CLASSIFICATION ---
@@ -67,16 +68,16 @@ empty_results <- emptyDrops(
 # 1. SET AN ERROR CEILING: Evaluate the False Discovery Rate (FDR). An FDR
 #    under 0.01 means there is less than a 1% chance the droplet is just soup.
 #    If it passes this strict math test, it gets flagged as TRUE (a cell).
-is_cell <- empty_results$FDR < 0.01
+IS_CELL <- EMPTY_RESULTS$FDR < 0.01
 
 # 2. CLEAN UP SKIPPED DROPLETS: Barcodes with ultra-low counts (e.g., <100 UMIs)
 #    are skipped by the algorithm to save computing power, returning an NA.
 #    We explicitly turn these blanks into FALSE so they don't crash our code.
-is_cell[is.na(is_cell)] <- FALSE
+IS_CELL[is.na(IS_CELL)] <- FALSE
 
 # 3. GRAB THE WHITELIST: Look at the matrix column names and pull out the
 #    exact text barcodes of the droplets that successfully scored a TRUE.
-validated_barcodes <- colnames(sce)[is_cell]
+VALIDATED_BARCODES <- colnames(SCE)[IS_CELL]
 
 
 # --- UNDERSTANDING RUN TIME METRICS & RANGES ---
@@ -91,14 +92,14 @@ validated_barcodes <- colnames(sce)[is_cell]
 # - Cells called: 9,668 (0.7%) -> Great yield for a standard single channel.
 # - Empty droplets: 1,379,842 (99.3%) -> Normal. Most captures contain soup.
 
-cat("Droplets tested:", ncol(sce), "\n")
+cat("Droplets tested:", ncol(SCE), "\n")
 cat(
-  "Cells called:", sum(is_cell),
-  "(", round(sum(is_cell) / ncol(sce) * 100, 1), "%)\n"
+  "Cells called:", sum(IS_CELL),
+  "(", round(sum(IS_CELL) / ncol(SCE) * 100, 1), "%)\n"
 )
 cat(
-  "Empty droplets removed:", sum(!is_cell),
-  "(", round(sum(!is_cell) / ncol(sce) * 100, 1), "%)\n"
+  "Empty droplets removed:", sum(!IS_CELL),
+  "(", round(sum(!IS_CELL) / ncol(SCE) * 100, 1), "%)\n"
 )
 
 
@@ -126,11 +127,11 @@ cat(
 #   the algorithm successfully distinguished background soup from healthy cells.
 
 empty_df <- data.frame(
-  total_umi = colSums(counts(sce)),
-  is_cell = is_cell
+  total_umi = colSums(counts(SCE)),
+  is_cell = IS_CELL
 )
 
-p1 <- ggplot(empty_df, aes(x = log10(total_umi + 1), fill = is_cell)) +
+P1 <- ggplot(empty_df, aes(x = log10(total_umi + 1), fill = is_cell)) +
   geom_histogram(bins = 50, alpha = 0.7, position = "identity") +
   scale_fill_manual(
     values = c("TRUE" = "#2E86AB", "FALSE" = "#A23B72"),
@@ -139,7 +140,7 @@ p1 <- ggplot(empty_df, aes(x = log10(total_umi + 1), fill = is_cell)) +
   ) +
   labs(
     title = "EmptyDrops: Cell vs Empty Droplet Detection",
-    subtitle = paste(sum(is_cell), "cells called from", ncol(sce), "droplets"),
+    subtitle = paste(sum(IS_CELL), "cells called from", ncol(SCE), "droplets"),
     x = "log10(UMI + 1)",
     y = "Number of Droplets"
   ) +
@@ -147,27 +148,26 @@ p1 <- ggplot(empty_df, aes(x = log10(total_umi + 1), fill = is_cell)) +
   theme(plot.title = element_text(face = "bold", size = 14))
 
 ggsave(
-  file.path(
-    "3_output", RUN_ID, "qc-and-filtering",
-    "plots", META_SAMPLE_NAME, "01_empty_droplets.png"
-  ),
-  plot = p1, width = 10, height = 6, dpi = 300
+  file.path(PLOTS_OUT_DIR, "01_empty_droplets.png"),
+  plot = P1, width = 10, height = 6, dpi = 300
 )
 
 
 # --- PHYSICAL FILTERING ---
 # ****************************************************************************#
 # CRITICAL PIPELINE PRESERVATION STEP:
-# We extract and save the `raw_counts_all_droplets` matrix BEFORE filtering.
+# We extract and save the `RAW_COUNTS_ALL_DROPLETS` matrix BEFORE filtering.
 # This unfiltered background matrix is strictly required by SoupX in Step 5,
 # which needs to inspect the total "soup" background matrix to figure out
 # exactly which ambient genes to subtract from your true cells.
-raw_counts_all_droplets <- LayerData(seurat_obj, layer = "counts")
+RAW_COUNTS_ALL_DROPLETS <- LayerData(SEURAT_OBJ, layer = "counts")
 
 # Subset the Seurat object to securely retain only the validated cell barcodes
-seurat_obj <- subset(seurat_obj, cells = validated_barcodes)
+SEURAT_OBJ <- LOG_STEP("Subsetting to validated cell barcodes...", {
+  subset(SEURAT_OBJ, cells = VALIDATED_BARCODES)
+})
 
-cat("After EmptyDrops:", ncol(seurat_obj), "cells retained\n")
+cat("After EmptyDrops:", ncol(SEURAT_OBJ), "cells retained\n")
 
 
 # ****************************************************************************#
@@ -195,11 +195,11 @@ cat("After EmptyDrops:", ncol(seurat_obj), "cells retained\n")
 # have successfully removed completely empty droplets, the cells we saved are
 # still technically contaminated by extracellular noise.
 #
-# Because thousands of fragile cells ruptured during initial tissue dissociation,
-# their contents created a free-floating background molecular soup that was
-# drawn into every single droplet—including our healthy ones. In Step 5, we will
-# pass this filtered matrix to SoupX. We will use the un-filtered background
-# count matrix we purposely cached right before filtering (`raw_counts_all_droplets`)
+# Because thousands of fragile cells ruptured during initial tissue
+# dissociation, their contents created a free-floating background molecular
+# soup that was drawn into every single droplet—including our healthy ones. In
+# Step 5, we will pass this filtered matrix to SoupX. We will use the unfiltered
+# count matrix we purposely cached right before filtering (`RAW_COUNTS_ALL_DROPLETS`)
 # to profile this background soup, calculate a sample-specific contamination
 # fraction, and mathematically wash ambient transcripts directly out of our cells.
 # ****************************************************************************#
