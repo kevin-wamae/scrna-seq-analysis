@@ -20,7 +20,7 @@ SAMPLE_ROW <- subset(
   read.delim("2_input/sample-metadata/sample_names.tsv",
     stringsAsFactors = FALSE
   ),
-  sample_name == "Healthy_2"
+  sample_name == "Healthy_2" # change this line to select a different sample
 )
 
 META_SAMPLE_NAME <- SAMPLE_ROW$sample_name
@@ -68,6 +68,7 @@ METRICS_OUT_DIR <- file.path(
 #   - `recursive = TRUE`: Instructs R to build missing parent paths on the fly
 #   - `showWarnings = FALSE`: Prevents the script from halting or throwing noise
 #      if the directories were already initialized by an earlier script step
+
 dir.create(DATA_OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(METRICS_OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(PLOTS_OUT_DIR, recursive = TRUE, showWarnings = FALSE)
@@ -103,6 +104,7 @@ cat("  • Visual Diagnostic Canvas:", PLOTS_OUT_DIR, "\n\n")
 # block, times it, prints "✓ Done in Xs", and returns the block's result.
 # Assign it like a normal expression: RESULT <- LOG_STEP("msg...", { ... })
 # The LOG_STEP() function is loaded in Step 1
+
 COUNTS <- LOG_STEP("Loading 10x matrix (this may take some time)...", {
   Read10X(data.dir = file.path(CELLRANGER_INPUT, "raw_feature_bc_matrix"))
 })
@@ -121,19 +123,21 @@ COUNTS <- LOG_STEP("Loading 10x matrix (this may take some time)...", {
 # cells here, tools like SoupX and EmptyDrops would lack the background
 # baseline data they need to estimate contamination accurately.
 
-SEURAT_OBJ <- CreateSeuratObject(
-  counts = COUNTS,
-  project = META_SAMPLE_NAME,
-  min.cells = 0, # Explicitly do NOT filter genes yet
-  min.features = 0 # Explicitly do NOT filter cells yet
-)
+SEURAT_OBJ <- LOG_STEP("Creating Seurat object (this may take some time)...", {
+  CreateSeuratObject(
+    counts = COUNTS,
+    project = META_SAMPLE_NAME,
+    min.cells = 0, # Explicitly do NOT filter genes yet
+    min.features = 0 # Explicitly do NOT filter cells yet
+  )
+})
 
 
 # --- ADD EXPERIMENTAL METADATA ---
 # ****************************************************************************#
 # Annotates the dataset with project-specific structural metadata. This is
 # essential for downstream analyses when merging multiple patient batches or
-# performing multi-condition differential expression (e.g., Healthy vs Disease).
+# performing multi-condition differential expression (e.g., Healthy vs Disease)
 
 SEURAT_OBJ@meta.data <- SEURAT_OBJ@meta.data %>%
   mutate(
