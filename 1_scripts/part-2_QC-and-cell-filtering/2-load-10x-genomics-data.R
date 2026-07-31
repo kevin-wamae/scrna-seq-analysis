@@ -20,7 +20,7 @@ SAMPLE_ROW <- subset(
   read.delim("2_input/sample-metadata/sample_names.tsv",
     stringsAsFactors = FALSE
   ),
-  sample_name == "Healthy_2" # change this line to select a different sample
+  sample_name == "Healthy_3" # change this line to select a different sample
 )
 
 META_SAMPLE_NAME <- SAMPLE_ROW$sample_name
@@ -65,9 +65,9 @@ METRICS_OUT_DIR <- file.path(
 # --- AUTOMATED DIRECTORY PROVISIONING ---
 # ****************************************************************************#
 # Construct the folder trees on disk:
-#   - `recursive = TRUE`: Instructs R to build missing parent paths on the fly
-#   - `showWarnings = FALSE`: Prevents the script from halting or throwing noise
-#      if the directories were already initialized by an earlier script step
+#  - `recursive = TRUE`: Instructs R to build missing parent paths on the fly
+#  - `showWarnings = FALSE`: Prevents the script from halting or throwing noise
+#    if the directories were already initialized by an earlier script step
 
 dir.create(DATA_OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(METRICS_OUT_DIR, recursive = TRUE, showWarnings = FALSE)
@@ -93,17 +93,17 @@ cat("  • Visual Diagnostic Canvas:", PLOTS_OUT_DIR, "\n\n")
 #    algorithm guessed were actual cells (usually ~3,000 - 10,000 cells).
 #
 # WHY THIS TUTORIAL USES OPTION A (RAW):
-# Cell Ranger's built-in filtering often accidentally throws away real, ultra-
-# small cells (like resting lymphocytes) or retains large dead cell debris.
-# Loading the RAW matrix allows you to run modern, superior downstream tools
-# like EmptyDrops (Step 4), SoupX (Step 5), and scDblFinder (Step 6) to perform
-# customized, high-precision purification that outperforms Cell Ranger.
+#   Cell Ranger's built-in filtering often accidentally throws away real, ultra-
+#   small cells (like resting lymphocytes) or retains large dead cell debris.
+#   Loading the RAW matrix allows you to run modern, superior downstream tools
+#   like EmptyDrops (Step 4), SoupX (Step 5), and scDblFinder (Step 6) to perform
+#   customized, high-precision purification that outperforms Cell Ranger.
 
 # OPTION A: Load RAW matrix (what this tutorial demonstrates)
-# LOG_STEP(<message>, { <code block> }) — prints the start message, runs the
-# block, times it, prints "✓ Done in Xs", and returns the block's result.
-# Assign it like a normal expression: RESULT <- LOG_STEP("msg...", { ... })
-# The LOG_STEP() function is loaded in Step 1
+#   - LOG_STEP(<message>, { <code block> }) — prints the start message, runs the
+#     block, times it, prints "✓ Done in Xs", and returns the block's result.
+#   - Assign it like a normal expression: RESULT <- LOG_STEP("msg...", { ... })
+#   - The LOG_STEP() function is loaded in Step 1
 
 COUNTS <- LOG_STEP("Loading 10x matrix (this may take some time)...", {
   Read10X(data.dir = file.path(CELLRANGER_INPUT, "raw_feature_bc_matrix"))
@@ -159,35 +159,36 @@ cat("(Most are empty - EmptyDrops will filter in Step 4)\n")
 # SUMMARY & PIPELINE MILESTONE TRANSITION
 # ****************************************************************************#
 # WHERE WE STARTED:
-# Before entering this step, we initialized our computational workspace (Step 1)
-# by loading our specialized genomic libraries, pinning a global reproducible
-# random seed, and aligning our high-performance Pixi environment packages.
-# At that stage, our project existed only as raw, unparsed Cell Ranger output
-# matrices stored blindly on the cluster disk.
+#   Before entering this step, we initialized our computational workspace (Step
+#   1) by loading our specialized genomic libraries, pinning a global reproduc-
+#   ible random seed, and aligning our high-performance Pixi environment
+#   packages. At that stage, our project existed only as raw, unparsed Cell
+#   Ranger output matrices stored blindly on the cluster disk.
 #
 # WHAT WE HAVE ACCOMPLISHED:
-# In this step, we successfully completed our data ingestion and environment
-# isolation milestone. We built a dynamic path provisioning framework rooted in
-# our active HPC scheduler `RUN_ID`, creating parallel, sample-isolated folder
-# tracks on disk. We made a deliberate architectural choice to load the raw
-# feature matrix rather than Cell Ranger's pre-filtered matrix, retaining
-# every captured microfluidic barcode with absolute fidelity. By initializing a
-# master Seurat object with zero filtering constraints (`min.cells = 0`,
-# `min.features = 0`) and mutating sample annotations into a single database
-# memory block, we preserved the raw data structure alongside crucial
-# experimental metadata.
+#   In this step, we successfully completed our data ingestion and environment
+#   isolation milestone. We built a dynamic path provisioning framework rooted
+#   in our active HPC scheduler `RUN_ID`, creating parallel, sample-isolated
+#   folder tracks on disk. We made a deliberate architectural choice to load the
+#   raw feature matrix rather than Cell Ranger's pre-filtered matrix,
+#   retaining every captured microfluidic barcode with absolute fidelity. By
+#   initializing a master Seurat object with zero filtering constraints
+#   (`min.cells = 0`, `min.features = 0`) and mutating sample annotations into
+#   a single database
+#   memory block, we preserved the raw data structure alongside crucial
+#   experimental metadata.
 #
 # WHERE WE ARE HEADING (STEP 3):
-# Our dataset is now successfully instantiated in R, housing over a million
-# captured barcodes alongside our global clinical metadata tags. However, we
-# are currently holding a massive, raw, and un-vetted sequencing dump.
+#   Our dataset is now successfully instantiated in R, housing over a million
+#   captured barcodes alongside our global clinical metadata tags. However, we
+#   are currently holding a massive, raw, and un-vetted sequencing dump.
 #
-# Because the microfluidic channel captures everything it touches, the
-# overwhelming majority of these million barcodes represent fluid-only, empty
-# droplets or free-floating background molecules. Before we can deploy advanced
-# filtering algorithms, we must understand the baseline noise profile of this
-# specific run. In Step 3, we will perform an initial diagnostic exploration. We
-# will measure the global sparsity of the expression matrix and audit the UMI
-# count distributions to map out
-# the technical footprints of our sample before initiating data purification.
+#   Because the microfluidic channel captures everything it touches, the
+#   overwhelming majority of these million barcodes represent fluid-only, empty
+#   droplets or free-floating background molecules. Before we can deploy
+#   advanced filtering algorithms, we must understand the baseline noise profile
+#   of this specific run. In Step 3, we will perform an initial diagnostic
+#   exploration. We will measure the global sparsity of the expression matrix
+#   and audit the UMI count distributions to map out the technical footprints of
+#   our sample before initiating data purification.
 # ****************************************************************************#
