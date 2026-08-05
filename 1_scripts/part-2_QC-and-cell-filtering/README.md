@@ -196,11 +196,11 @@ total count — so a low-UMI droplet with a cell-type-specific gene mix is rescu
 as a real cell, while a low-UMI droplet of generic housekeeping genes is dropped.
 Saves `plots/01_empty_droplets.png`.
 
-| Reading the result                                                    | Interpretation                                                                             |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Cells called as % of droplets                                         | Commonly ~0.5–2% of all raw droplets — most captures are empty.                          |
-| Two clear modes on the `log10(UMI)` histogram with a valley between | High-quality prep: background soup cleanly separated from real cells.                      |
-| No valley / heavy overlap                                             | Possible degradation or heavy ambient contamination — inspect before trusting downstream. |
+| Reading the result                                                   | Interpretation                                                                             |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Cells called as % of droplets                                        | Commonly ~0.5–2% of all raw droplets — most captures are empty.                          |
+| Two clear modes on the`log10(UMI)` histogram with a valley between | High-quality prep: background soup cleanly separated from real cells.                      |
+| No valley / heavy overlap                                            | Possible degradation or heavy ambient contamination — inspect before trusting downstream. |
 
 > **Critical:** the full raw matrix is cached as `raw_counts_all_droplets`
 > *before* subsetting — SoupX needs it in step 5.
@@ -340,6 +340,142 @@ filtered_data/cell_metadata.csv
 
 ---
 
+## Tutorial: Setting QC Thresholds for `Healthy_1`
+
+This section walks through the visual inspection and threshold-setting process for a single sample (`Healthy_1`), step by step. The same reasoning transfers to any tissue or sample — the numbers change, but the logic stays the same.
+
+### The sample
+
+`Healthy_1` is a PBMC/immune cell sample from Donor 1 (SRA: SRR14575500). After loading the raw 10x matrix, running EmptyDrops, checking ambient RNA (clean — SoupX skipped), and removing doublets with scDblFinder, we arrive at **~9,600 single cells** ready for manual QC.
+
+The thresholds are stored in `sample_names.tsv` and loaded dynamically by the pipeline:
+
+| Parameter        | Value | Meaning                                        |
+| ---------------- | ----- | ---------------------------------------------- |
+| `nfeature_min` | 500   | Minimum 500 unique genes per cell              |
+| `nfeature_max` | 5000  | Maximum 5000 genes (catches residual doublets) |
+| `ncount_min`   | 800   | Minimum 800 total transcripts                  |
+| `ncount_max`   | 20000 | Maximum 20,000 transcripts                     |
+| `mt_thresh`    | 10    | Remove cells with ≥10% mitochondrial reads    |
+
+---
+
+### Step 1: Look at the distributions (violin plots)
+
+![Violin plots for Healthy_1](../../4_docs/images/healthy_1_qc_violins.png)
+
+*Figure: `03_qc_violins.png` — distribution of nCount_RNA, nFeature_RNA, percent.mt, and percent.ribo across all ~9,600 cells after doublet removal.*
+
+**What each panel tells you:**
+
+| Panel                  | What it measures                 | What you see for Healthy_1                                       |
+| ---------------------- | -------------------------------- | ---------------------------------------------------------------- |
+| **nCount_RNA**   | Total transcripts per cell       | Dense belly around ~10K UMIs, tail to ~100K                      |
+| **nFeature_RNA** | Unique genes per cell            | Most cells express ~2,000–3,000 genes; tail to ~8K              |
+| **percent.mt**   | % reads from mitochondrial genes | **Critical:** dense base near 0–5%, dramatic tail to 100% |
+| **percent.ribo** | % reads from ribosomal genes     | Broad distribution ~10–30%, healthy metabolic activity          |
+
+**Key observation:** The `percent.mt` panel is the most important. The massive base near 0–5% is your healthy living cells. The thin tail shooting to 100% is ruptured "ghost cells" — membranes torn, cytoplasm leaked, mitochondria trapped inside. This tail is what the `mt_thresh` gate removes.
+
+---
+
+### Step 2: Look at the relationships (scatter plots)
+
+![Scatter plots for Healthy_1](../../4_docs/images/healthy_1_qc_scatter.png)
+
+*Figure: `04_qc_scatter.png` — pairwise relationships between QC metrics. These are where you actually draw your threshold lines.*
+
+**Panel 1: UMI vs Genes Detected**
+
+- **X-axis:** Total transcripts (`nCount_RNA`)
+- **Y-axis:** Unique genes (`nFeature_RNA`)
+- **What you see:** A strong diagonal cloud. The bottom-left "shelf" near the origin is debris (very few UMIs, very few genes). The top-right sparse dots above ~5K genes and ~20K UMIs are residual doublets that slipped past automated detection.
+- **How thresholds map:** `ncount_min=800` and `nfeature_min=500` cut the debris shelf. `ncount_max=20000` and `nfeature_max=5000` trim the doublet tail.
+
+**Panel 2: UMI vs Mitochondrial %**
+
+- **X-axis:** Total transcripts
+- **Y-axis:** Mitochondrial %
+- **What you see:** The healthy bulk sits flat at the bottom (low MT%, regardless of UMI count). Above them, a vertical spray reaches to 90%+ MT. These are the dying cells.
+- **How the threshold maps:** `mt_thresh=10` draws a horizontal line at 10%. It keeps the dense healthy cloud and removes the vertical death-tail.
+
+**Panel 3: Mitochondrial % vs Ribosomal %**
+
+- **X-axis:** Mitochondrial %
+- **Y-axis:** Ribosomal %
+- **What you see:** The main population clusters at low MT + medium ribo (~10–30%). As MT% increases, ribo% scatters and drops.
+- **Why this matters:** This is a **cross-validation**. A dead cell signature is **high MT + low ribo** (bottom-right). A healthy cell is **low MT + medium ribo**. This confirms that your MT threshold is truly catching dying cells, not just a weird cell type.
+
+---
+
+### Step 3: Draw the bounding box (threshold plot)
+
+The pipeline generates `05_filtering_thresholds_linear.png` (and a log-scale version) to show exactly which cells pass and fail your chosen gates:
+
+```
+plots/Healthy_1/05_filtering_thresholds_linear.png
+```
+
+![Scatter plots for Healthy_1](../../4_docs/images/healthy_1_filtering_thresholds_linear.png)
+
+This plot overlays your five thresholds as red dashed lines on the UMI-vs-genes scatter:
+
+- **Vertical lines:** `ncount_min` (left) and `ncount_max` (right)
+- **Horizontal lines:** `nfeature_min` (bottom) and `nfeature_max` (top)
+- **Hidden third dimension:** `mt_thresh` — cells inside the box can still fail and turn red if their mitochondrial % ≥ 10%
+
+**For Healthy_1, the result is a clean separation:** ~90% of cells pass, ~10% are removed. The removed cells are a mixture of low-gene debris, high-UMI doublets, and high-MT dying cells.
+
+---
+
+### Why these specific numbers?
+
+A common beginner question: *"Why not raise the ceiling to 6,000 genes / 30,000 UMIs? There are still dots up there."*
+
+Here's why that would be a mistake:
+
+| Region                               | What's there                | Verdict                          |
+| ------------------------------------ | --------------------------- | -------------------------------- |
+| Below thresholds (main cloud)        | Healthy single cells        | ✅ Keep                          |
+| ~5,000–6,000 genes / ~20K–30K UMIs | Sparse "bridge" cells       | ❌ Likely doublets               |
+| Above ~6,000 genes / ~30K UMIs       | Clear outliers to 9K / 100K | ❌ Definitely doublets or clumps |
+
+The sparse dots above 5,000 genes are not a "rare cell type." They are **physical doublets** — two cells captured in one droplet — whose merged transcriptomes create artificially high complexity. If you let them through, they form fake "hybrid" clusters in downstream analysis (e.g., a T-cell + B-cell doublet looks like a novel cell type expressing both CD3 and CD20). The automated doublet detector (`scDblFinder`) catches most of them, but manual thresholds are your **final safety net**.
+
+**The rule:** Draw your lines at the **natural thinning point** where the dense cloud ends and the sparse scatter begins. For Healthy_1, that point is ~5,000 genes and ~20,000 UMIs.
+
+---
+
+### Step 4: Verify the removal rate
+
+After setting thresholds, the pipeline prints a removal breakdown. For Healthy_1:
+
+```
+Cells before: ~9,600
+Cells passing QC: ~8,600 (90%)
+Cells removed: ~1,000 (10%)
+```
+
+This sits comfortably in the **healthy 10–25% corridor**. If you see:
+
+- **< 5% removed:** Too lenient — you're probably keeping debris and doublets.
+- **30–40% removed:** Too strict — usually the MT% cap is set too low for your tissue. Tumors and brain tissue often need 15–20% MT thresholds.
+- **> 50% removed:** Catastrophic — either your sample failed or your thresholds are wildly wrong.
+
+---
+
+### Summary: the decision flow for any sample
+
+1. **Run the pipeline through Step 6** (empty droplets, ambient RNA, doublets).
+2. **Open `03_qc_violins.png`** — check that the MT% violin has a clear healthy base + death tail.
+3. **Open `04_qc_scatter.png`** — find the natural edges of the main cloud.
+4. **Set thresholds in `sample_names.tsv`** — minimums just above the debris shelf, maximums where the cloud thins, MT cap at the elbow of the death-tail.
+5. **Run Step 7, check `05_filtering_thresholds_linear.png`** — verify the green/pass and red/fail separation looks clean.
+6. **Check the removal rate** — aim for 10–25%. Adjust if needed.
+7. **Never copy thresholds blindly between samples.** Healthy_1 uses 500/5000/800/20000/10. Healthy_2 uses 200/4500/800/16000/10. Same tissue, same donor cohort — but different distributions, different numbers. Always inspect your own plots.
+
+---
+
 ## Reference ranges (guides, not rules)
 
 | Metric                | Typical range | At the edges                                       |
@@ -358,11 +494,11 @@ filtered_data/cell_metadata.csv
 
 | Symptom                            | Likely cause / fix                                                                                                                            |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Very few cells after filtering     | Thresholds too strict, or poor sample quality. Relax the MT cap for your tissue; check Cell Ranger `web_summary.html`.                      |
+| Very few cells after filtering     | Thresholds too strict, or poor sample quality. Relax the MT cap for your tissue; check Cell Ranger`web_summary.html`.                       |
 | > 30% cells removed                | Usually the MT% cap. Inspect the removal breakdown; if one gate accounts for >90% of losses, that threshold is wrong.                         |
-| Doublet rate high for a small prep | Over-loading or an over-sensitive detector. Optionally threshold on `scDblFinder.score`.                                                    |
+| Doublet rate high for a small prep | Over-loading or an over-sensitive detector. Optionally threshold on`scDblFinder.score`.                                                     |
 | A cluster driven by QC metrics     | Incomplete filtering*or* a real stressed population (check HSP genes). Tighten if technical; annotate if biological.                        |
-| SoupX returns `NULL`             | Often**good** — the sample is clean. The `tryCatch` proceeds on original counts. Only set contamination manually with strong reason. |
+| SoupX returns`NULL`              | Often**good** — the sample is clean. The `tryCatch` proceeds on original counts. Only set contamination manually with strong reason. |
 
 ---
 
