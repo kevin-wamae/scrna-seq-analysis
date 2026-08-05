@@ -47,6 +47,41 @@
 #      droplets contain a high count of the same repetitive transcripts,
 #      causing this ratio to plunge.
 
+# --- RE-RUN SAFETY GUARD ---
+# ----------------------------------------------------------------------------#
+# WHY THIS EXISTS:
+# The last line of this script does `SEURAT_OBJ <- subset(SEURAT_OBJ, ...)`,
+# permanently overwriting SEURAT_OBJ with the filtered result. This is fine
+# the FIRST time you run Step 7. But if you tweak a threshold in
+# `sample_names.tsv` and re-source this script in the same R session (very
+# easy to do while iterating), SEURAT_OBJ at this point is no longer the
+# fresh, unfiltered object handed off from Step 6 — it's already the OUTPUT
+# of the previous run of this exact script.
+#
+# If that happens silently, every downstream calculation is wrong in a
+# specific, misleading way: QC_DF is built from cells that already satisfy
+# the OLD thresholds, so the new thresholds trivially pass ~100% of them,
+# the removal-rate guard looks suspiciously clean, and
+# `05_filtering_thresholds_linear.png` shows a "100% pass" plot whose axis
+# never extends past the threshold lines — because no remaining cell is
+# anywhere near them anymore. That is not evidence of well-calibrated
+# thresholds; it's evidence you filtered an already-filtered object.
+#
+# THE GUARD: stamp the object with a flag the first time filtering is
+# applied. If Step 7 runs again and finds that flag already set, stop with
+# an explicit error instead of silently producing misleading plots.
+
+if (isTRUE(SEURAT_OBJ@misc$qc_cell_filter_applied)) {
+  stop(
+    "SEURAT_OBJ has already been through Step 7's cell-level filtering ",
+    "(flag SEURAT_OBJ@misc$qc_cell_filter_applied is TRUE).\n",
+    "Re-running this script on an already-filtered object silently ",
+    "produces misleading 'thresholds' plots and a fake 100% pass rate.\n",
+    "Re-load SEURAT_OBJ fresh from Step 2 (loading 10x data) ",
+    "before adjusting thresholds and re-running Step 7."
+  )
+}
+
 # Calculate per-cell quality control statistics
 SEURAT_OBJ@meta.data <- SEURAT_OBJ@meta.data %>%
   mutate(
@@ -546,6 +581,11 @@ SEURAT_OBJ <- subset(
     percent.mt < MT_THRESH
 )
 
+# Stamp the object so a future accidental re-run of this script is caught by
+# the guard at the top, instead of silently producing misleading plots.
+SEURAT_OBJ@misc$qc_cell_filter_applied <- TRUE
+
+# Print the number of cells remaining after filtering
 cat("After filtering:", ncol(SEURAT_OBJ), "cells remaining\n")
 
 
