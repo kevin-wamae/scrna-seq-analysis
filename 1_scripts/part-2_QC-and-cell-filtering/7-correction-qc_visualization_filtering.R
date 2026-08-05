@@ -46,29 +46,13 @@
 #      is complex and expresses thousands of diverse genes. Debris or empty
 #      droplets contain a high count of the same repetitive transcripts,
 #      causing this ratio to plunge.
+#   4. Re-run Safety Guard: Prevents Step 7 from being run twice on an already
+#      filtered Seurat object in the same R session, avoiding misleading QC
+#      statistics, plots, and threshold validation.
 
-# --- RE-RUN SAFETY GUARD ---
-# ----------------------------------------------------------------------------#
-# WHY THIS EXISTS:
-# The last line of this script does `SEURAT_OBJ <- subset(SEURAT_OBJ, ...)`,
-# permanently overwriting SEURAT_OBJ with the filtered result. This is fine
-# the FIRST time you run Step 7. But if you tweak a threshold in
-# `sample_names.tsv` and re-source this script in the same R session (very
-# easy to do while iterating), SEURAT_OBJ at this point is no longer the
-# fresh, unfiltered object handed off from Step 6 — it's already the OUTPUT
-# of the previous run of this exact script.
-#
-# If that happens silently, every downstream calculation is wrong in a
-# specific, misleading way: QC_DF is built from cells that already satisfy
-# the OLD thresholds, so the new thresholds trivially pass ~100% of them,
-# the removal-rate guard looks suspiciously clean, and
-# `05_filtering_thresholds_linear.png` shows a "100% pass" plot whose axis
-# never extends past the threshold lines — because no remaining cell is
-# anywhere near them anymore. That is not evidence of well-calibrated
-# thresholds; it's evidence you filtered an already-filtered object.
-#
 # THE GUARD: stamp the object with a flag the first time filtering is
-# applied. If Step 7 runs again and finds that flag already set, stop with
+# applied (Line 601: `SEURAT_OBJ@misc$qc_cell_filter_applied <- TRUE`).
+# If Step 7 runs again and finds that flag already set, stop with
 # an explicit error instead of silently producing misleading plots.
 
 if (isTRUE(SEURAT_OBJ@misc$qc_cell_filter_applied)) {
@@ -332,6 +316,7 @@ cat("Based on visual inspection of the plots above:\n\n")
 # Values are set per-sample in sample_names.tsv (edit that file to tune
 # thresholds for a given sample based on YOUR visual inspection above).
 
+# Retrieve filtering thresholds for the current sample from the metadata TSV
 SAMPLE_ROW <- subset(
   read.delim("2_input/sample-metadata/sample_names.tsv",
     stringsAsFactors = FALSE
@@ -339,6 +324,8 @@ SAMPLE_ROW <- subset(
   sample_name == META_SAMPLE_NAME # reuses the sample selected in Step 2
 )
 
+
+# Print a warning message to the console if number of rows is not equal to 1
 if (nrow(SAMPLE_ROW) != 1) {
   stop(
     "Expected exactly 1 row for sample '", META_SAMPLE_NAME,
@@ -346,12 +333,16 @@ if (nrow(SAMPLE_ROW) != 1) {
   )
 }
 
+
+# Assign the filtering thresholds to variables from the metadata TSV
 NFEATURE_MIN <- SAMPLE_ROW$nfeature_min
 NFEATURE_MAX <- SAMPLE_ROW$nfeature_max
 NCOUNT_MIN <- SAMPLE_ROW$ncount_min
 NCOUNT_MAX <- SAMPLE_ROW$ncount_max
 MT_THRESH <- SAMPLE_ROW$mt_thresh
 
+
+# Create a named vector of the threshold values
 THRESHOLD_VALUES <- c(
   NFEATURE_MIN = NFEATURE_MIN,
   NFEATURE_MAX = NFEATURE_MAX,
@@ -360,6 +351,8 @@ THRESHOLD_VALUES <- c(
   MT_THRESH = MT_THRESH
 )
 
+
+# Print a warning message to the console if any threshold values are missing
 if (any(is.na(THRESHOLD_VALUES))) {
   stop(
     "Missing threshold value(s) for sample '", META_SAMPLE_NAME,
@@ -368,6 +361,8 @@ if (any(is.na(THRESHOLD_VALUES))) {
   )
 }
 
+
+# Print the threshold values to the console
 cat("Set thresholds (adjust in sample_names.tsv based on YOUR data):\n")
 cat("  nFeature_RNA: [", NFEATURE_MIN, ",", NFEATURE_MAX, "]\n")
 cat("  nCount_RNA: [", NCOUNT_MIN, ",", NCOUNT_MAX, "]\n")
@@ -501,6 +496,8 @@ ggsave(
 #     spike in the "High MT%" bucket indicates bad tissue dissociation stress,
 #     whereas high gene counts indicate an abundance of physical doublets.
 
+
+# Calculate the percentage of cells removed
 REMOVAL_PCT <- sum(!QC_DF$pass_qc) / nrow(QC_DF) * 100
 cat("Filtering impact:\n")
 cat("  Cells before:", nrow(QC_DF), "\n")
@@ -510,6 +507,8 @@ cat(
   "(", round(REMOVAL_PCT, 1), "%)\n\n"
 )
 
+
+# Report the number of cells removed for each filter
 cat("Removal breakdown:\n")
 cat(
   "  Low genes (<", NFEATURE_MIN, "):",
@@ -543,6 +542,7 @@ cat(
 #     runs that ensures clean cell states without sacrificing biological
 #     diversity.
 
+# Check if the removal percentage is outside the healthy corridor (10-25%)
 if (REMOVAL_PCT > 30) {
   cat("WARNING: Removing", round(REMOVAL_PCT, 1), "% of cells is high!\n")
   cat("   Consider relaxing thresholds (especially MT%)\n\n")
@@ -572,21 +572,33 @@ CELLS_BEFORE_CELL_QC <- nrow(QC_DF)
 #     accurate normalisation, variable gene discovery, and dimensional
 #     reduction.
 
-SEURAT_OBJ <- subset(
-  SEURAT_OBJ,
-  subset = nCount_RNA >= NCOUNT_MIN &
-    nCount_RNA <= NCOUNT_MAX &
-    nFeature_RNA >= NFEATURE_MIN &
-    nFeature_RNA <= NFEATURE_MAX &
-    percent.mt < MT_THRESH
-)
+# Print a warning message to the console
+cat("WARNING!! About to subset SEURAT_OBJ with the thresholds above:\n")
 
-# Stamp the object so a future accidental re-run of this script is caught by
-# the guard at the top, instead of silently producing misleading plots.
-SEURAT_OBJ@misc$qc_cell_filter_applied <- TRUE
+# Prompt the user to confirm or deny subsetting
+choice <- readline(prompt = "Proceed with subsetting? Enter 1 (YES) or 2 (NO): ")
 
-# Print the number of cells remaining after filtering
-cat("After filtering:", ncol(SEURAT_OBJ), "cells remaining\n")
+# If the user confirms subsetting, subset the Seurat object with the specified thresholds
+if (choice == "1") {
+  SEURAT_OBJ <- subset(
+    SEURAT_OBJ,
+    subset = nCount_RNA >= NCOUNT_MIN &
+      nCount_RNA <= NCOUNT_MAX &
+      nFeature_RNA >= NFEATURE_MIN &
+      nFeature_RNA <= NFEATURE_MAX &
+      percent.mt < MT_THRESH
+  )
+
+  # Stamp the object so a future accidental re-run of this script is caught by
+  # the guard at the top, instead of silently producing misleading plots.
+  SEURAT_OBJ@misc$qc_cell_filter_applied <- TRUE
+
+  cat("Subsetting complete. New object has", ncol(SEURAT_OBJ), "cells.\n")
+} else if (choice == "2") {
+  cat("Subsetting skipped. SEURAT_OBJ left unchanged.\n")
+} else {
+  cat("Invalid input. Please enter 1 or 2. Subsetting skipped.\n")
+}
 
 
 # ****************************************************************************#
