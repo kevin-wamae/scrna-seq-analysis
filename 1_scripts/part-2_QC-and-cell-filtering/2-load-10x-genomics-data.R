@@ -20,7 +20,8 @@ SAMPLE_ROW <- subset(
   read.delim("2_input/sample-metadata/sample_names.tsv",
     stringsAsFactors = FALSE
   ),
-  sample_name == "Healthy_3" # change this line to select a different sample
+  # choose from sample_name column in "2_input/sample-metadata/sample_names.tsv"
+  sample_name == "SAMPLE_NAME" # e.g. "Healthy_1"
 )
 
 META_SAMPLE_NAME <- SAMPLE_ROW$sample_name
