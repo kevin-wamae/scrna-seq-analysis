@@ -58,7 +58,8 @@ EMPTY_RESULTS <- LOG_STEP("Running EmptyDrops (this can take some time)...", {
     m = counts(SCE),
     lower = 100,
     niters = 10000,
-    test.ambient = TRUE
+    test.ambient = TRUE,
+    BPPARAM = BiocParallel::MulticoreParam(workers = N_WORKERS)
   )
 })
 

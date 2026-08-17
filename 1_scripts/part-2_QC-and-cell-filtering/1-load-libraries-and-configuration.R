@@ -2,6 +2,8 @@
 # STEP 1: Load libraries and configure environment
 # ****************************************************************************#
 
+# TODO: Speed up processes
+# TODO: Identify processes that can be improved with bpcells package
 
 # Single-cell RNA-seq data arrives as a massive, noisy matrix of counts. Before
 # jumping into biological clustering, the data must pass through a linear
@@ -90,6 +92,29 @@ if (packageVersion("Seurat") >= "5.0.0") {
     cat("✓ Seurat 5 detected - layer-based architecture available\n")
 } else {
     warning("Please upgrade to Seurat 5 for this tutorial")
+}
+
+
+# --- SET WORKER/CPU COUNT ---
+# ****************************************************************************#
+# Determine worker/CPU count for downstream parallel processing:
+#   - If running under a job scheduler (SLURM), respect the allocation and
+#     leave 1 core free for OS/monitoring overhead.
+#   - Otherwise assume this is a shared interactive machine (e.g. a lab
+#     workstation) and cap usage at 4 cores, regardless of how many the
+#     machine physically has, to avoid starving other users.
+
+# Count number of CPUs available in SLURM scheduler
+SLURM_ALLOC <- Sys.getenv("SLURM_CPUS_PER_TASK", unset = NA)
+
+
+# Set number of workers/CPUs depending on environment
+if (!is.na(SLURM_ALLOC)) {
+    N_WORKERS <- max(1, as.integer(SLURM_ALLOC) - 1)
+    cat("Scheduler detected (SLURM) - using", N_WORKERS, "worker(s)\n")
+} else {
+    N_WORKERS <- min(4, max(1, parallel::detectCores() - 1))
+    cat("No scheduler detected - shared environment cap:", N_WORKERS, "worker(s)\n")
 }
 
 

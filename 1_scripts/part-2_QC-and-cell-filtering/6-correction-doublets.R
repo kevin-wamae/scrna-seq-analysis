@@ -45,7 +45,12 @@ set.seed(100)
 
 SCE <- LOG_STEP("Running scDblFinder doublet detection...", {
   suppressWarnings({
-    scDblFinder(SCE, dbr = NULL, verbose = FALSE)
+    scDblFinder(
+      sce = SCE,
+      dbr = NULL,
+      verbose = FALSE,
+      BPPARAM = BiocParallel::MulticoreParam(workers = N_WORKERS)
+    )
   })
 })
 
