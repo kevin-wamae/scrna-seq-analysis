@@ -1,91 +1,116 @@
 [workspace]
 #--------------------------------------------------------------------
+# Project identity
+#--------------------------------------------------------------------
 authors = ["Kevin Wamae <wamaekevin@gmail.com>"]
+name = "scrna-seq-analysis"       # Used by pixi as the environment/project name
+version = "0.2.0"                 # Bump on meaningful dependency or pipeline changes
 
 
 #--------------------------------------------------------------------
 # Repositories where pixi searches for packages, in order of priority
 #--------------------------------------------------------------------
-# - conda-forge: community-maintained, general-purpose packages. Should be listed first for R packages to avoid conflicts.
-# - bioconda   : specialised bioinformatics tools and packages (SRA Toolkit, FastQC, samtools, etc.)
-# - defaults   : anaconda’s official repository requires accepting additional terms of service for commercial use, so we exclude it
+# - conda-forge: community-maintained, general-purpose packages. Should be
+#                listed first for R packages to avoid conflicts.
+# - bioconda   : specialised bioinformatics tools and packages (SRA Toolkit,
+#                FastQC, samtools, etc.)
+# - defaults   : anaconda's official repository requires accepting additional
+#                terms of service for commercial use, so we exclude it
 channels = ["conda-forge", "bioconda"]
-name = "scrna-seq-analysis"
 
 
 #--------------------------------------------------------------------
-# Platforms to build for:
+# Platforms to build for
 #--------------------------------------------------------------------
-# - linux-64 for HPCs and local linux laptops
-# - osx-64 for local development on MacOS
+# - linux-64: HPCs and local Linux laptops
+# - osx-64  : local development on macOS (uncomment if needed)
 platforms = ["linux-64"]
-
-
-#--------------------------------------------------------------------
-# Version of the project
-#--------------------------------------------------------------------
-version = "0.1.1"
 
 
 [tasks]
 #--------------------------------------------------------------------
-# Define tasks for the analysis
+# Shared helper tasks (run via `pixi run <task>`)
 #--------------------------------------------------------------------
-# use srun to create an interactive bash session
+# srun: request an interactive HPC compute session via slurm, e.g. for
+#       running scripts interactively instead of submitting a batch job.
 srun = "srun --ntasks=1 --cpus-per-task=4 --mem=16G --time=02:00:00 --pty bash"
+
 
 #--------------------------------------------------------------------
 # Part 1: Data download and quality control
 #--------------------------------------------------------------------
-# Covers downloading data from NCBI SRA and quality control for FASTQ files
+# Covers downloading raw sequencing data from NCBI SRA and running quality
+# control on the resulting FASTQ files, ahead of any R-based analysis.
 [feature.part1-feature.dependencies]
-sra-tools = "*"       # Download data from NCBI SRA
-fastqc = "*"          # Quality control for FASTQ files
-multiqc = "*"         # Aggregate QC reports
-samtools = "*"        # Manipulate BAM files
+sra-tools = "*"       # Download data from NCBI SRA (prefetch, fasterq-dump)
+fastqc = "*"          # Per-file quality control for FASTQ reads
+multiqc = "*"         # Aggregate FastQC (and other tool) reports into one summary
+samtools = "*"        # Manipulate/inspect BAM/SAM alignment files
 wget = ">=1.25.0,<2"  # Download files from the web
-python = ">=3.10"     # Python
+python = ">=3.10"     # Python runtime (required by multiqc)
+
+
+#--------------------------------------------------------------------
+# Core: shared across every downstream R stage (Parts 2, 3, 4...)
+#--------------------------------------------------------------------
+# Packages every stage needs regardless of what it's doing — the base R
+# install, Seurat itself, core data manipulation, plotting, and dev/IDE
+# tooling. Kept separate so each part-feature only lists what's genuinely
+# unique to it, instead of re-declaring Seurat/dplyr/ggplot2 everywhere.
+[feature.core-feature.dependencies]
+r-base = ">=4.3"               # Base R installation
+r-seurat = ">=5.4.0,<6"        # Core scRNA-seq analysis
+r-seuratobject = ">=5.3.0,<6"  # Seurat data structures
+r-dplyr = ">=1.1.4,<2"         # Data manipulation
+
+# Plotting
+r-ggplot2 = ">=4.0.3,<5"       # Core plotting
+r-patchwork = ">=1.3.2,<2"     # Combine multiple plots into one panel
+r-scales = "*"                 # x/y axis scaling/formatting for ggplot2
+r-ggrepel = ">=0.9.8,<0.10"    # Non-overlapping text labels
+r-rcolorbrewer = ">=1.1_3,<2"  # Color palettes
+r-viridis = ">=0.6.5,<0.7"     # Perceptually uniform color scales
+
+# Data reshaping
+r-reshape2 = "*"                # Data reshaping for visualization
+
+# Development and utility packages
+r-rlang = "*"                  # Underlying tidyverse language/grammar tools
+r-jsonlite = "*"                # JSON parsing (used for language server / IDE tooling)
+r-languageserver = "*"          # R language server, for IDE support (e.g. VS Code)
+r-httpgd = "*"                  # HTTP graphics device, for inline plots in VS Code
+r-remotes = "*"                 # Install R packages stored on GitHub (needed for SeuratWrappers, etc.)
+r-future = "*"                  # Parallel/asynchronous processing backend
 
 
 #--------------------------------------------------------------------
 # Part 2: QC and pre-processing
 #--------------------------------------------------------------------
-# Covers filtering empty droplets, detecting doublets, and removing low-quality cells
+# Covers filtering empty droplets, correcting ambient RNA, detecting
+# doublets, and removing low-quality cells/genes from a single sample.
+# Only packages unique to this stage — Seurat/dplyr/ggplot2/etc. come
+# from core-feature via the `part2` environment definition below.
 [feature.part2-feature.dependencies]
-r-base = ">=4.3"               # Base R installation
-r-seurat = ">=5.4.0,<6"        # Core scRNA-seq analysis
-r-seuratobject = ">=5.3.0,<6"  # Seurat data structures
-r-soupx = ">=1.6.2,<2"         # Ambient RNA correction
-
 bioconductor-singlecellexperiment = ">=1.28.0,<2"  # Data structures for single-cell genomics
+bioconductor-dropletutils = ">=1.26.0,<2"          # EmptyDrops: distinguish real cells from empty droplets
 bioconductor-scdblfinder = ">=1.23.4,<2"           # Doublet detection
-bioconductor-dropletutils = ">=1.26.0,<2"          # Droplet (empty) filtering toolkit
-
-r-dplyr = ">=1.1.4,<2"        # Data manipulation
-r-ggplot2 = "*"               # Core plotting
-r-scales = "*"                # x/y axis scaling/formatting for ggplot2
-r-patchwork = ">=1.3.2,<2"    # Combine multiple plots
-r-languageserver = "*"        # Language server for R (needed for r-language-server)
-r-jsonlite = "*"              # JSON parsing
-r-httpgd = "*"                # HTTP Graphics Device for R
-r-rlang = "*"                 # Grammar of Graphics for R
+r-soupx = ">=1.6.2,<2"                             # Ambient RNA ("soup") correction
 
 
-# #--------------------------------------------------------------------
-# # Part 3: Integration & Clustering Packages
-# #--------------------------------------------------------------------
-# # Covers batch correction and integration of multiple samples
-# [feature.part3-feature.dependencies]
-# r-harmony = "*"                                    # Fast probabilistic integration
-# bioconductor-batchelor = { channel = "bioconda" }  # FastMNN integration
+#--------------------------------------------------------------------
+# Part 3: Integration & Clustering Packages
+#--------------------------------------------------------------------
+# Covers batch correction and integration of multiple samples.
+# Only packages unique to this stage — Seurat/dplyr/ggplot2/patchwork/etc.
+# come from core-feature via the `part3` environment definition below.
+[feature.part3-feature.dependencies]
+r-harmony = "*"                # Fast probabilistic integration
+bioconductor-batchelor = "*"   # FastMNN integration (used by Seurat's IntegrateLayers)
+bioconductor-scran = "*"       # Additional normalisation methods
 
-# # Visualization packages
-# r-ggplot2 = ">=4.0.3,<5"                           # Core plotting
-# r-patchwork = ">=1.3.2,<2"                         # Combine multiple plots
-# r-ggalluvial = ">=0.12.6,<0.13"                    # Sankey diagrams
-# r-viridis = ">=0.6.5,<0.7"                         # Perceptually uniform colors
-# r-rcolorbrewer = ">=1.1_3,<2"                      # Color palettes
-# r-ggrepel = ">=0.9.8,<0.10"                        # Non-overlapping labels
+# Utility packages
+r-fnn = "*"                    # k-nearest neighbour calculations (used in quality metrics)
+r-cluster = "*"                # Clustering quality metrics (silhouette scores)
 
 
 # #--------------------------------------------------------------------
@@ -106,7 +131,11 @@ r-rlang = "*"                 # Grammar of Graphics for R
 #--------------------------------------------------------------------
 # Environments for different analysis stages
 #--------------------------------------------------------------------
+# part1 has no R dependency, so it stands alone. part2/part3/part4 each
+# combine core-feature (Seurat, dplyr, ggplot2, dev tooling) with their
+# own unique packages — nothing part-specific gets pulled into a stage
+# that doesn't need it.
 part1 = ["part1-feature"]
-part2 = { features = ["part2-feature"], solve-group = "downstream" }
-# part3 = { features = ["part3-feature"], solve-group = "downstream" }
-# part4 = { features = ["part4-feature"], solve-group = "downstream" }
+part2 = { features = ["core-feature", "part2-feature"], solve-group = "downstream" }
+part3 = { features = ["core-feature", "part3-feature"], solve-group = "downstream" }
+# part4 = { features = ["core-feature", "part4-feature"], solve-group = "downstream" }
