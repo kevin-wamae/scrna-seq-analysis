@@ -21,10 +21,10 @@ SAMPLE_ROW <- subset(
     stringsAsFactors = FALSE
   ),
   # choose from sample_name column in "2_input/sample-metadata/sample_names.tsv"
-  sample_name == "SAMPLE_NAME" # e.g. "Healthy_1"
+  sample_id == "Healthy_1" # e.g. "Participant_1"
 )
 
-META_SAMPLE_NAME <- SAMPLE_ROW$sample_name
+META_SAMPLE_NAME <- SAMPLE_ROW$sample_id
 META_SRA_ID <- SAMPLE_ROW$sra_id
 META_CONDITION <- SAMPLE_ROW$condition
 META_PATIENT_ID <- SAMPLE_ROW$patient_id

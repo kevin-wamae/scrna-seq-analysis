@@ -322,7 +322,7 @@ SAMPLE_ROW <- subset(
   read.delim("2_input/sample-metadata/sample_names.tsv",
     stringsAsFactors = FALSE
   ),
-  sample_name == META_SAMPLE_NAME # reuses the sample selected in Step 2
+  sample_id == META_SAMPLE_NAME # reuses the sample selected in Step 2
 )
 
 
