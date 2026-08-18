@@ -1,13 +1,13 @@
-sample_name	sra_id	condition	patient_id
-Healthy_1	SRR14575500	Healthy	Donor_1
-Healthy_2	SRR14575501	Healthy	Donor_2
-Healthy_3	SRR14575502	Healthy	Donor_3
-Healthy_4	SRR14575503	Healthy	Donor_4
-Periodontitis_Pre_1	SRR14575504	Periodontitis_Pre	Donor_5
-Periodontitis_Pre_2	SRR14575505	Periodontitis_Pre	Donor_6
-Periodontitis_Pre_3	SRR14575506	Periodontitis_Pre	Donor_7
-Periodontitis_Pre_4	SRR14575507	Periodontitis_Pre	Donor_8
-Periodontitis_Post_1	SRR14575508	Periodontitis_Post	Donor_5
-Periodontitis_Post_2	SRR14575509	Periodontitis_Post	Donor_6
-Periodontitis_Post_3	SRR14575510	Periodontitis_Post	Donor_7
-Periodontitis_Post_4	SRR14575511	Periodontitis_Post	Donor_8
+sample_name	sra_id	condition	patient_id	nfeature_min	nfeature_max	ncount_min	ncount_max	mt_thresh
+Healthy_1	SRR14575500	Healthy	Donor_1	500	5000	800	20000	10
+Healthy_2	SRR14575501	Healthy	Donor_2	500	5000	800	20000	10
+Healthy_3	SRR14575502	Healthy	Donor_3	500	5000	800	20000	8
+Healthy_4	SRR14575503	Healthy	Donor_4	500	5000	800	20000	17
+Periodontitis_Pre_1	SRR14575504	Periodontitis_Pre	Donor_5	700	5000	800	20000	15
+Periodontitis_Pre_2	SRR14575505	Periodontitis_Pre	Donor_6	700	5000	800	20000	12
+Periodontitis_Pre_3	SRR14575506	Periodontitis_Pre	Donor_7	500	5450	800	22000	11
+Periodontitis_Pre_4	SRR14575507	Periodontitis_Pre	Donor_8	500	5000	800	20000	11
+Periodontitis_Post_1	SRR14575508	Periodontitis_Post	Donor_5	500	5000	800	20000	13
+Periodontitis_Post_2	SRR14575509	Periodontitis_Post	Donor_6	500	5000	800	20000	24
+Periodontitis_Post_3	SRR14575510	Periodontitis_Post	Donor_7	550	5000	800	20000	13
+Periodontitis_Post_4	SRR14575511	Periodontitis_Post	Donor_8	500	5000	800	20000	13
