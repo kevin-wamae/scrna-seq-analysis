@@ -4,7 +4,7 @@
 #--------------------------------------------------------------------
 authors = ["Kevin Wamae <wamaekevin@gmail.com>"]
 name = "scrna-seq-analysis"       # Used by pixi as the environment/project name
-version = "0.2.0"                 # Bump on meaningful dependency or pipeline changes
+version = "0.2.1"                 # Bump on meaningful dependency or pipeline changes
 
 
 #--------------------------------------------------------------------
@@ -107,6 +107,20 @@ r-soupx = ">=1.6.2,<2"                             # Ambient RNA ("soup") correc
 r-harmony = "*"                # Fast probabilistic integration
 bioconductor-batchelor = "*"   # FastMNN integration (used by Seurat's IntegrateLayers)
 bioconductor-scran = "*"       # Additional normalisation methods
+
+# Transitive dependencies of SeuratWrappers (satijalab/seurat-wrappers)
+# ------------------------------------------------------------------------
+# SeuratWrappers' DESCRIPTION pulls these in even though this pipeline
+# doesn't call them directly. Left unpinned, `remotes::install_github()`
+# tries to compile them from source — `magick` needs the system
+# ImageMagick C library (not something install.packages() can provide),
+# and SpatialExperiment/Banksy are Bioconductor packages best resolved as
+# conda binaries anyway. Declaring them here means remotes finds them
+# already satisfied and skips building them, instead of failing partway
+# through the SeuratWrappers install.
+r-magick = "*"                        # Image processing (ImageMagick bindings) — SeuratWrappers dep
+bioconductor-spatialexperiment = "*"  # Spatial data structures — Banksy dep, pulled in via SeuratWrappers
+bioconductor-banksy = "*"             # Spatial clustering method — SeuratWrappers dep
 
 # Utility packages
 r-fnn = "*"                    # k-nearest neighbour calculations (used in quality metrics)
