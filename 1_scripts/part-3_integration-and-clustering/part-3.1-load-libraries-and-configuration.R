@@ -41,6 +41,7 @@ library(cluster)          # Silhouette scores for clustering quality
 
 # Parallel processing
 library(future)
+library(furrr)
 options(future.globals.maxSize = 20 * 1024^3)  # Increase to 20GB for large datasets
 
 # # Set working directory (adjust to your path)
