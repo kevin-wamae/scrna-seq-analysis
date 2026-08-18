@@ -3,18 +3,48 @@
 # ****************************************************************************#
 
 # --- THE INFRASTRUCTURE REQUIREMENTS ---
-# As with Part 2, every integration package with a conda-forge or bioconda
-# build is declared in `pixi.toml` (`part3-feature`) and installed via
-# `pixi install` — Harmony, batchelor, scran, ggrepel, RColorBrewer, viridis,
-# remotes, future, FNN, cluster, reshape2. Do NOT add `install.packages()`
-# calls here for anything already declared there.
+# Every integration package with a conda-forge or bioconda build is declared
+# in `pixi.toml` — shared tooling (Seurat, dplyr, ggplot2, ggrepel,
+# RColorBrewer, viridis, reshape2, remotes, future) in `core-feature`, and
+# integration-specific packages (Harmony, batchelor, scran, FNN, cluster) in
+# `part3-feature`. Both are installed via `pixi install -e part3`. Do NOT add
+# `install.packages()` calls here for anything already declared there.
 #
-# The ONE exception is `SeuratWrappers`, which is distributed only via GitHub
-# (satijalab/seurat-wrappers) with no CRAN or conda release, so it must be
-# installed at the R level using `remotes` (itself pixi-managed).
+# What's left are two packages with no conda package at all, so pixi's
+# channels can't reach them, and they must be installed at the R level:
+#   1. `colorout`, hosted on the independent R-specific repository
+#      community.r-multiverse.org (same package/exception as Part 2).
+#   2. `SeuratWrappers`, distributed only via GitHub
+#      (satijalab/seurat-wrappers), installed using `remotes` (itself
+#      pixi-managed).
 
-if (!requireNamespace("SeuratWrappers", quietly = TRUE)) {
-    remotes::install_github("satijalab/seurat-wrappers")
+# REPRODUCIBILITY & ECOSYSTEM BENEFIT:
+# By wrapping each install inside an `if (!requireNamespace(...))` conditional
+# structure, the script validates your local environment first. It only
+# downloads a package if it is missing, preventing your script from wasting
+# compute hours and bandwidth re-downloading it during repetitive runs.
+
+# --- 1. colorout ---
+if (!requireNamespace("colorout", quietly = TRUE)) {
+  install.packages("colorout", repos = "https://community.r-multiverse.org")
 }
 
-cat("\n✓ SeuratWrappers verified. All other packages are managed by pixi.toml.\n")
+# --- 2. SeuratWrappers ---
+if (!requireNamespace("SeuratWrappers", quietly = TRUE)) {
+  # `ref`: pin to a specific commit SHA (not @HEAD) so re-running this script
+  #   in a year installs the exact same code, not whatever's newest on the
+  #   default branch. Find/update the SHA at:
+  #   https://github.com/satijalab/seurat-wrappers/commits/master
+  # `upgrade = "never"`: stops remotes from checking SeuratWrappers'
+  #   dependencies against CRAN and offering to upgrade them. Without this,
+  #   it will happily upgrade Seurat, future, rlang, etc. to whatever's
+  #   newest on CRAN — silently overwriting the exact versions pixi.toml
+  #   pinned and defeating the whole point of using pixi.
+  remotes::install_github(
+    "satijalab/seurat-wrappers",
+    ref = "8df8343", # replace with the commit SHA you've validated against
+    upgrade = "never"
+  )
+}
+
+cat("\n✓ colorout and SeuratWrappers verified. All other packages are managed by pixi.toml.\n")
