@@ -33,6 +33,8 @@
 #      soup. We explicitly drop them to clean our downstream biological signal
 # ==============================================================================
 
+# TODO: include check for filtering from step 7 before continuing
+
 # --- 1. Define the Detection Floor ---
 #   Assign your minimum percentage filter (Adjust dynamically per project).
 #   This establishes the baseline frequency required for a gene to be kept.

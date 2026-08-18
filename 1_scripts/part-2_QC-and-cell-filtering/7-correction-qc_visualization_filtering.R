@@ -2,6 +2,7 @@
 # STEP 7: Calculate QC metrics, visualize, and filter cells
 # ****************************************************************************#
 
+# TODO: Merge linear and log plots
 
 # ****************************************************************************#
 # --- THE PURPOSE OF CELL-LEVEL QC ---

@@ -34,10 +34,13 @@ cat("Total genes:", nrow(SEURAT_OBJ), "\n")
 #   empty zeros. Seurat uses a "Sparse Matrix" which only remembers the
 #   coordinates of non-zero entries, keeping computational overhead lean.
 
+# Calculate the proportion of zero entries (sparsity) in the count matrix
 SPARSITY <- 1 - (
     sum(LayerData(SEURAT_OBJ, layer = "counts") > 0) /
         (nrow(SEURAT_OBJ) * ncol(SEURAT_OBJ))
 )
+
+# Print the sparsity percentage
 cat("Matrix SPARSITY:", round(SPARSITY * 100, 1), "%\n")
 
 
