@@ -53,21 +53,23 @@ qc_data_path <- "3_output/2026_06_09_brown_job_3058993/qc_and_filtering/filtered
 plan(multisession, workers = min(nrow(sample_metadata), availableCores()))
 
 # Load the Seurat objects in parallel
-seurat_list <- future_map(
-  sample_metadata$sample_id,
-  function(sample_id) {
-    obj <- readRDS(file.path(qc_data_path, sample_id, paste0(sample_id, "_qc_filtered.rds")))
-    # Re-stamp metadata from the TSV, rather than trusting whatever each
-    # sample's saved object already carries — keeps this script the single
-    # authority on which condition/patient labels feed into integration.
-    obj$sample_id <- sample_id
-    obj$condition <- sample_metadata$condition[sample_metadata$sample_id == sample_id]
-    obj$patient_id <- sample_metadata$patient_id[sample_metadata$sample_id == sample_id]
-    obj
-  },
-  .options = furrr_options(seed = TRUE) # equivalent to future.seed = TRUE
-) %>%
-  set_names(sample_metadata$sample_id)
+seurat_list <- LOG_STEP("Loading QC-filtered Seurat objects in parallel...", {
+  future_map(
+    sample_metadata$sample_id,
+    function(sample_id) {
+      obj <- readRDS(file.path(qc_data_path, sample_id, paste0(sample_id, "_qc_filtered.rds")))
+      # Re-stamp metadata from the TSV, rather than trusting whatever each
+      # sample's saved object already carries — keeps this script the single
+      # authority on which condition/patient labels feed into integration.
+      obj$sample_id <- sample_id
+      obj$condition <- sample_metadata$condition[sample_metadata$sample_id == sample_id]
+      obj$patient_id <- sample_metadata$patient_id[sample_metadata$sample_id == sample_id]
+      obj
+    },
+    .options = furrr_options(seed = TRUE) # equivalent to future.seed = TRUE
+  ) %>%
+    set_names(sample_metadata$sample_id)
+})
 
 # Release workers once done, good practice before heavy in-process steps
 plan(sequential)
@@ -92,8 +94,10 @@ common_genes <- seurat_list %>%
   reduce(intersect)
 
 # Subset all samples to the common gene set
-seurat_list <- seurat_list %>%
-  map(~ .x[common_genes, ])
+seurat_list <- LOG_STEP("Subsetting all samples to common gene set...", {
+  seurat_list %>%
+    map(~ .x[common_genes, ])
+})
 
 
 # --- DATASET DIMENSIONS QUICK CHECK ---
