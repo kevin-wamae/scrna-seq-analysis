@@ -1,30 +1,64 @@
 # ****************************************************************************#
-# STEP 1: Load required libraries
+# STEP 1: Load required libraries and configure environment
 # ****************************************************************************#
 
 
-# Declare pipeline variables
-# ----------------------------------------------------------------------------#
-# The date-stamped job run ID (from HPC scheduler) for tracking
-RUN_ID <- "2026_06_09_brown_job_3058993" 
+# --- DECLARE PIPELINE VARIABLES ---
+# ****************************************************************************#
+# The date-stamped job run ID (from HPC scheduler) for tracking. Every output
+# path constructed later in this script nests under this ID, so all files
+# from a given cluster job land in one traceable folder tree.
+RUN_ID <- "2026_06_09_brown_job_3058993"
 
 
-# Terminal output colouring (load first so errors/warnings are coloured)
+# --- REPRODUCIBILITY MECHANICS ---
+# ****************************************************************************#
+# `set.seed(100)` pins the pseudorandom number generator before anything in
+# this pipeline can draw on it. Harmony's stochastic optimization, FastMNN's
+# nearest-neighbour searches, and UMAP layout all rely on random draws — set
+# this early, once, so every downstream step (including parallel workers
+# spawned later via `future`) inherits a reproducible baseline.
+set.seed(100)
+
+
+# --- TERMINAL OUTPUT COLOURING ---
+# ****************************************************************************#
+# Loaded first so that any errors/warnings thrown by the libraries below are
+# already colour-coded when they print.
 library(colorout)
 
 
-# Core single-cell analysis
+# --- CORE SINGLE-CELL INFRASTRUCTURE ---
+# ****************************************************************************#
+# - `Seurat`: The core toolkit for managing, normalising, and clustering
+#   single-cell datasets.
+# - `SeuratObject`: Houses the underlying object architecture data models.
 library(Seurat)
 library(SeuratObject)
 
 
-# Integration methods
+# --- INTEGRATION METHODS ---
+# ****************************************************************************#
+# - `harmony`: Fast, probabilistic batch correction via iterative clustering.
+# - `batchelor`: Provides FastMNN, used internally by Seurat's
+#   `IntegrateLayers()` as an alternative integration method.
+# - `SeuratWrappers`: Community-maintained wrapper functions that let Seurat
+#   call third-party integration methods (Harmony, FastMNN, etc.) through a
+#   consistent `IntegrateLayers()` interface.
 library(harmony)
 library(batchelor)
 library(SeuratWrappers)
 
 
-# Visualization and data manipulation
+# --- DATA VISUALIZATION & MANIPULATION ---
+# ****************************************************************************#
+# - `ggplot2` / `patchwork`: Core plotting engine and multi-panel assembly.
+# - `ggrepel`: Non-overlapping text labels on crowded plots (e.g. marker
+#   gene labels on variable feature plots).
+# - `RColorBrewer` / `viridis`: Colour palettes for categorical and
+#   perceptually-uniform continuous scales, respectively.
+# - `dplyr`: Fast, readable metadata manipulation and filtering.
+# - `reshape2`: Reshaping data (wide/long) for custom cluster quality plots.
 library(ggplot2)
 library(ggrepel)
 library(dplyr)
@@ -34,18 +68,62 @@ library(viridis)
 library(reshape2)
 
 
-# Quality metrics and utilities
-library(FNN)              # K-nearest neighbor calculations for mixing metrics
-library(cluster)          # Silhouette scores for clustering quality
+# --- QUALITY METRICS & UTILITIES ---
+# ****************************************************************************#
+# - `FNN`: K-nearest neighbour calculations, used for batch-mixing metrics
+#   that assess how well integration removed technical separation.
+# - `cluster`: Silhouette scores, used to assess clustering quality/cohesion.
+library(FNN)
+library(cluster)
 
 
-# Parallel processing
+# --- PARALLEL PROCESSING ---
+# ****************************************************************************#
+# - `future`: Parallel/asynchronous processing backend.
+# - `furrr` / `purrr`: purrr-flavored parallel map() functions built on
+#   `future`, used for parallelizing per-sample operations (e.g. loading
+#   QC-filtered `.rds` files in Step 2).
 library(future)
 library(furrr)
-options(future.globals.maxSize = 20 * 1024^3)  # Increase to 20GB for large datasets
+library(purrr)
 
-# # Set working directory (adjust to your path)
-# setwd("~/GSE174609_scRNA/integration_analysis")
+# `future.globals.maxSize` caps how much data `future` can serialize and
+# export to each parallel worker in one go. 20GB is a placeholder — right-size
+# this to your actual merged object size once samples are loaded (Step 2):
+#   OBJ_SIZE_GB <- as.numeric(object.size(SEURAT_OBJ)) / 1024^3
+#   options(future.globals.maxSize = ceiling(OBJ_SIZE_GB * 3) * 1024^3)
+# and keep it comfortably under whatever --mem your srun/sbatch job requests.
+options(future.globals.maxSize = 20 * 1024^3)
+
+
+# --- PIPELINE LOGGING UTILITY ---
+# ****************************************************************************#
+# Several steps in this pipeline (integration, clustering, UMAP on large
+# matrices) can run for several minutes with no console output. Without
+# feedback, this looks indistinguishable from a hang. LOG_STEP() prints a
+# start message, runs the supplied code, times it, and prints a "Done in Xs"
+# message when it finishes — flushing stdout immediately so messages appear
+# on screen right away, even when running non-interactively (Rscript, slurm
+# logs), where R would otherwise buffer output until the call finishes.
+#
+# USAGE:
+#   SEURAT_INTEGRATED <- LOG_STEP("Running Harmony integration...", {
+#     IntegrateLayers(SEURAT_OBJ, method = HarmonyIntegration)
+#   })
+LOG_STEP <- function(msg, expr) {
+    message(msg)
+    flush(stdout())
+
+    ELAPSED <- system.time({
+        RESULT <- eval.parent(substitute(expr))
+    })
+
+    message(sprintf("✓ Done in %.1f seconds", ELAPSED["elapsed"]))
+    flush(stdout())
+
+    RESULT
+}
+
 
 # --- DYNAMIC OUTPUT PATH REGISTRATION ---
 # ****************************************************************************#
@@ -83,11 +161,15 @@ cat("  •   └─ Clustering:", PLOTS_CLUSTERING_DIR, "\n")
 cat("  • Integrated Data Archive:", DATA_OUT_DIR, "\n")
 cat("  • Metadata Ledger:", METADATA_OUT_DIR, "\n\n")
 
-# Set random seed for reproducibility
-set.seed(42)
 
-# Configure plotting defaults
+# --- PLOTTING DEFAULTS ---
+# ****************************************************************************#
+# Applies a consistent, publication-friendly theme across every plot
+# generated downstream, so individual plotting blocks don't need to repeat it.
 theme_set(theme_classic(base_size = 12))
 
+
+# --- ENVIRONMENT VERIFICATION ---
+# ****************************************************************************#
 cat("Environment setup complete\n")
 cat("Seurat version:", as.character(packageVersion("Seurat")), "\n")
