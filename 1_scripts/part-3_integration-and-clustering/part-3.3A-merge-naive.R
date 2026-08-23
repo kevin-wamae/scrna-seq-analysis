@@ -85,7 +85,7 @@ cat("Clustering complete:", length(unique(merged_naive$seurat_clusters)), "clust
 #   4-core cap on shared interactive machines). rds ignores thread counts.
 
 # choose between qs2 (fast) and rds (universal)
-CHECKPOINT_FORMAT <- 2
+CHECKPOINT_FORMAT <- 1
 
 # save the merged object to disk
 if (CHECKPOINT_FORMAT == 1) {
