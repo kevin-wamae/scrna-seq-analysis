@@ -140,6 +140,15 @@ METADATA_OUT_DIR <- file.path(
   "3_output", RUN_ID, "integration_and_clustering", "metadata"
 )
 
+# Checkpoint archive: intermediate objects (merged_naive, merged_seurat,
+# and the four per-method integrated objects) saved so a crashed/killed
+# HPC job can resume mid-pipeline without re-running earlier integrations.
+# Kept separate from DATA_OUT_DIR so `integrated_data/` holds only the
+# final deliverable, and this folder can be deleted once a run is validated.
+DATA_CHECKPOINT_DIR <- file.path(
+  "3_output", RUN_ID, "integration_and_clustering", "checkpoints"
+)
+
 
 # --- AUTOMATED DIRECTORY PROVISIONING ---
 # ****************************************************************************#
@@ -153,13 +162,15 @@ dir.create(PLOTS_COMPARISON_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(PLOTS_CLUSTERING_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(DATA_OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(METADATA_OUT_DIR, recursive = TRUE, showWarnings = FALSE)
+dir.create(DATA_CHECKPOINT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 cat("✓ Output directories securely synchronized to disk:\n")
 cat("  • Visual Diagnostic Canvas:", PLOTS_OUT_DIR, "\n")
 cat("  •   ├─ Integration Comparison:", PLOTS_COMPARISON_DIR, "\n")
 cat("  •   └─ Clustering:", PLOTS_CLUSTERING_DIR, "\n")
 cat("  • Integrated Data Archive:", DATA_OUT_DIR, "\n")
-cat("  • Metadata Ledger:", METADATA_OUT_DIR, "\n\n")
+cat("  • Metadata Ledger:", METADATA_OUT_DIR, "\n")
+cat("  • Checkpoint Vault:", DATA_CHECKPOINT_DIR, "\n\n")
 
 
 # --- PLOTTING DEFAULTS ---
@@ -167,6 +178,29 @@ cat("  • Metadata Ledger:", METADATA_OUT_DIR, "\n\n")
 # Applies a consistent, publication-friendly theme across every plot
 # generated downstream, so individual plotting blocks don't need to repeat it.
 theme_set(theme_classic(base_size = 12))
+
+
+# --- SET WORKER/CPU COUNT ---
+# ****************************************************************************#
+# Determine worker/CPU count for downstream parallel processing:
+#   - If running under a job scheduler (SLURM), respect the allocation and
+#     leave 1 core free for OS/monitoring overhead.
+#   - Otherwise assume this is a shared interactive machine (e.g. a lab
+#     workstation) and cap usage at 4 cores, regardless of how many the
+#     machine physically has, to avoid starving other users.
+
+# Count number of CPUs available in SLURM scheduler
+SLURM_ALLOC <- Sys.getenv("SLURM_CPUS_PER_TASK", unset = NA)
+
+
+# Set number of workers/CPUs depending on environment
+if (!is.na(SLURM_ALLOC)) {
+    N_WORKERS <- max(1, as.integer(SLURM_ALLOC) - 1)
+    cat("Scheduler detected (SLURM) - using", N_WORKERS, "worker(s)\n")
+} else {
+    N_WORKERS <- min(4, max(1, parallel::detectCores() - 1))
+    cat("No scheduler detected - shared environment cap:", N_WORKERS, "worker(s)\n")
+}
 
 
 # --- ENVIRONMENT VERIFICATION ---
