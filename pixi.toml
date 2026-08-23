@@ -29,11 +29,11 @@ platforms = ["linux-64"]
 
 [tasks]
 #--------------------------------------------------------------------
-# Shared helper tasks (run via `pixi run <task>`)
+# Shared helper tasks (run via `pixi run <task>`, e.g. `pixi run srun`)
 #--------------------------------------------------------------------
 # srun: request an interactive HPC compute session via slurm, e.g. for
 #       running scripts interactively instead of submitting a batch job.
-srun = "srun --ntasks=1 --cpus-per-task=12 --mem=30G --time=02:00:00 --pty bash"
+srun = "srun --ntasks=1 --cpus-per-task=16 --mem=50G --time=02:00:00 --pty bash"
 
 
 #--------------------------------------------------------------------
@@ -72,16 +72,17 @@ r-rcolorbrewer = ">=1.1_3,<2"  # Color palettes
 r-viridis = ">=0.6.5,<0.7"     # Perceptually uniform color scales
 
 # Data reshaping
-r-reshape2 = "*"                # Data reshaping for visualization
+r-reshape2 = "*"               # Data reshaping for visualization
 
 # Development and utility packages
 r-rlang = "*"                  # Underlying tidyverse language/grammar tools
-r-jsonlite = "*"                # JSON parsing (used for language server / IDE tooling)
-r-languageserver = "*"          # R language server, for IDE support (e.g. VS Code)
-r-httpgd = "*"                  # HTTP graphics device, for inline plots in VS Code
-r-remotes = "*"                 # Install R packages stored on GitHub (needed for SeuratWrappers, etc.)
-r-future = "*"                  # Parallel/asynchronous processing backend
-r-furrr = "*"                   # Parallel/asynchronous processing backend
+r-jsonlite = "*"               # JSON parsing (used for language server / IDE tooling)
+r-languageserver = "*"         # R language server, for IDE support (e.g. VS Code)
+r-httpgd = "*"                 # HTTP graphics device, for inline plots in VS Code
+r-remotes = "*"                # Install R packages stored on GitHub (needed for SeuratWrappers, etc.)
+r-future = "*"                 # Parallel/asynchronous processing backend
+r-furrr = "*"                  # Parallel/asynchronous processing backend
+r-qs2 = "*"                    # Fast, multi-format binary data serialization
 
 
 #--------------------------------------------------------------------

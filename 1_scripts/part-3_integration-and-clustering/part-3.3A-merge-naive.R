@@ -70,6 +70,49 @@ cat("Clustering complete:", length(unique(merged_naive$seurat_clusters)), "clust
 # Clustering complete: 19 clusters identified
 
 
+# --- 3. Checkpoint: Persist the Naive Baseline to Disk ---
+# ****************************************************************************#
+#   `merged_naive` is needed again much later (Step 11 comparison UMAPs and
+#   Step 12 mixing metrics), so we checkpoint it now — a crashed job can
+#   resume from here without redoing the merge + clustering workflow.
+#
+# SERIALIZATION FORMAT SWITCH:
+#   1 = qs2 (fast, multithreaded ZSTD compression — recommended on HPC)
+#   2 = rds (base R, slower single-threaded gzip, but universally readable)
+#
+#   qs2 multithreads its compression via RcppParallel, so it reuses the
+#   N_WORKERS count already resolved in Step 3.1 (slurm allocation - 1, or a
+#   4-core cap on shared interactive machines). rds ignores thread counts.
+
+# choose between qs2 (fast) and rds (universal)
+CHECKPOINT_FORMAT <- 2
+
+# save the merged object to disk
+if (CHECKPOINT_FORMAT == 1) {
+  CHECKPOINT_FILE <- file.path(
+    DATA_CHECKPOINT_DIR, "01_merged_naive_clustered.qs2"
+  )
+  LOG_STEP(sprintf(
+    "Saving naive merge checkpoint (qs2, %d threads)...", N_WORKERS
+  ), {
+    qs2::qs_save(merged_naive, CHECKPOINT_FILE, nthreads = N_WORKERS)
+  })
+
+} else if (CHECKPOINT_FORMAT == 2) {
+  CHECKPOINT_FILE <- file.path(
+    DATA_CHECKPOINT_DIR, "01_merged_naive_clustered.rds"
+  )
+  LOG_STEP("Saving naive merge checkpoint (rds, single-threaded)...", {
+    saveRDS(merged_naive, CHECKPOINT_FILE)
+  })
+} else {
+  stop("CHECKPOINT_FORMAT must be 1 (qs2) or 2 (rds)")
+}
+
+# print the path to the checkpoint file
+cat("✓ Checkpoint written:", CHECKPOINT_FILE, "\n\n")
+
+
 # ****************************************************************************#
 # SUMMARY & PIPELINE MILESTONE TRANSITION
 # ****************************************************************************#
