@@ -11,6 +11,7 @@
 #   layer — if the layers were pre-merged into one pooled layer, there'd be
 #   nothing for the algorithm to compare.
 
+
 # --- 1. Merge all samples into a single object ---
 # ****************************************************************************#
 #   `add.cell.ids` prefixes every cell barcode with its sample name (e.g.
@@ -26,6 +27,7 @@ merged_seurat <- merge(
   project = "GSE174609_Integration"
 )
 
+
 # --- 2. Recover sample-level metadata from cell names ---
 # ****************************************************************************#
 #   `merge()` does not carry over our external metadata table automatically,
@@ -37,13 +39,23 @@ merged_seurat <- merge(
 #   of A/C/G/T characters directly followed by more barcode-looking text —
 #   true for names like "Healthy_1", but worth re-checking if sample IDs
 #   ever change format.
+#
+#   All three metadata columns (sample_id, condition, patient_id) are
+#   derived from the SAME cell_names vector computed once up front, then
+#   applied to the object via `AddMetaData()` — a function call rather than
+#   a `$<-` assignment, which is what makes it pipeable. condition and
+#   patient_id are looked up from the external sample sheet via `match()`
+#   against the just-derived sample_id.
 cell_names <- colnames(merged_seurat)
-merged_seurat$sample_id <- gsub("_[ACGT].*$", "", cell_names)  # strip barcode, keep sample_id
+sample_id  <- gsub("_[ACGT].*$", "", cell_names)  # strip barcode, keep sample_id
 
-# With sample_id recovered, join the rest of the per-sample metadata
-# (condition, patient_id) from the external sample sheet via a lookup match.
-merged_seurat$condition   <- sample_metadata$condition[match(merged_seurat$sample_id, sample_metadata$sample_id)]
-merged_seurat$patient_id  <- sample_metadata$patient_id[match(merged_seurat$sample_id, sample_metadata$sample_id)]
+merged_seurat <- merged_seurat %>%
+  AddMetaData(metadata = sample_id, col.name = "sample_id") %>%
+  AddMetaData(metadata = sample_metadata$condition[match(sample_id, sample_metadata$sample_id)],
+              col.name = "condition") %>%
+  AddMetaData(metadata = sample_metadata$patient_id[match(sample_id, sample_metadata$sample_id)],
+              col.name = "patient_id")
+
 
 # --- 3. Ensure RNA assay layers are split by sample ---
 # ****************************************************************************#
@@ -60,6 +72,7 @@ if (length(current_layers) > 1) {
   cat("Splitting layers by sample\n")
   merged_seurat[["RNA"]] <- split(merged_seurat[["RNA"]], f = merged_seurat$sample_id)
 }
+
 
 # --- 4. Normalize, find variable features, scale, and run PCA — per layer ---
 # ****************************************************************************#
