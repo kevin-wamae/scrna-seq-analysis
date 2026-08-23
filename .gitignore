@@ -32,24 +32,12 @@ logs/*
 !2_input/cellranger-matrix-counts/.gitkeep
 
 # ================================================
-# 3_output
-# ================================================
-# Track folder structure only — all generated output is ignored
-3_output/filtered_data/*
-!3_output/filtered_data/.gitkeep
-
-3_output/plots/*
-!3_output/plots/.gitkeep
-
-3_output/qc_metrics/*
-!3_output/qc_metrics/.gitkeep
-
-# ================================================
 # Large data files (safety net)
 # ================================================
 # Catches any data files that land anywhere in the repo
 *DS_Store
 *.rds
+*.qs2
 *.csv
 *.h5
 *.bam
