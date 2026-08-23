@@ -1,5 +1,5 @@
 # ****************************************************************************#
-# STEP 3: Naive merge without integration
+# STEP 3.3A: Naive merge without integration
 # ****************************************************************************#
 
 
@@ -85,10 +85,10 @@ cat("Clustering complete:", length(unique(merged_naive$seurat_clusters)), "clust
 #   baseline: 72,649 cells resolving into 19 clusters purely on raw biological
 #   and technical variation combined.
 #
-# WHERE WE ARE HEADING (STEP 4):
+# WHERE WE ARE HEADING (STEP 3.3B):
 #   Because no batch correction was applied, some (or many) of these 19
 #   clusters may be splitting cells by patient/technical origin rather than
-#   true cell type — the exact confound integration exists to fix. In Step 4,
+#   true cell type — the exact confound integration exists to fix. In Step 3.3B,
 #   we will run Harmony and/or FastMNN on this same merged object and compare
 #   the resulting UMAPs and clustering side-by-side against this naive
 #   baseline, making the effect of batch correction directly visible rather

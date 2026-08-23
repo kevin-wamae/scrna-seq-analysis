@@ -1,5 +1,5 @@
 # ****************************************************************************#
-# STEP 2: Load QC-filtered samples from Part 2
+# STEP 3.2: Load QC-filtered samples from Step 3.1
 # ****************************************************************************#
 
 
@@ -130,9 +130,9 @@ cat("Common genes retained:", length(common_genes), "\n")
 #   By intersecting all sample gene lists into a single common feature space,
 #   every object entering Step 3 now shares identical rows.
 #
-# WHERE WE ARE HEADING (STEP 3):
+# WHERE WE ARE HEADING (STEP 3.3A):
 #   With a common gene space established, our sample list is now
-#   structurally ready for batch correction. In Step 3, we will merge these
+#   structurally ready for batch correction. In Step 3.3A, we will merge these
 #   objects and run integration methods (Harmony/FastMNN) to correct for
 #   technical, patient-driven variation between samples, allowing biological
 #   differences between Healthy and Periodontitis states to emerge in

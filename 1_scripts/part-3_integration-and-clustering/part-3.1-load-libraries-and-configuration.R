@@ -1,5 +1,5 @@
 # ****************************************************************************#
-# STEP 1: Load required libraries and configure environment
+# STEP 3.1: Load required libraries and configure environment
 # ****************************************************************************#
 
 

@@ -1,5 +1,5 @@
 # ****************************************************************************#
-# Installation: R-level packages (not available via pixi/conda)
+# STEP 3.0 :Installation of R-level packages (not available via pixi/conda)
 # ****************************************************************************#
 
 # --- INFRASTRUCTURE BOUNDARY ---
