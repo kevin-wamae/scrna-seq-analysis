@@ -76,18 +76,13 @@ cat("Clustering complete:", length(unique(merged_naive$seurat_clusters)), "clust
 #   Step 12 mixing metrics), so we checkpoint it now — a crashed job can
 #   resume from here without redoing the merge + clustering workflow.
 #
-# SERIALIZATION FORMAT SWITCH:
-#   1 = qs2 (fast, multithreaded ZSTD compression — recommended on HPC)
-#   2 = rds (base R, slower single-threaded gzip, but universally readable)
-#
-#   qs2 multithreads its compression via RcppParallel, so it reuses the
-#   N_WORKERS count already resolved in Step 3.1 (slurm allocation - 1, or a
-#   4-core cap on shared interactive machines). rds ignores thread counts.
+#   The serialization format is governed by CHECKPOINT_FORMAT, set once in
+#   Step 3.1 (1 = qs2, 2 = rds). qs2 multithreads its compression via
+#   RcppParallel, so it reuses the N_WORKERS count also resolved in Step 3.1
+#   (slurm allocation - 1, or a 4-core cap on shared interactive machines);
+#   rds ignores thread counts.
 
-# choose between qs2 (fast) and rds (universal)
-CHECKPOINT_FORMAT <- 1
-
-# save the merged object to disk
+# save the merged object to disk in the chosen format
 if (CHECKPOINT_FORMAT == 1) {
   CHECKPOINT_FILE <- file.path(
     DATA_CHECKPOINT_DIR, "01_merged_naive_clustered.qs2"

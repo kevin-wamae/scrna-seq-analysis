@@ -10,6 +10,13 @@
 # from a given cluster job land in one traceable folder tree.
 RUN_ID <- "2026_06_09_brown_job_3058993"
 
+# Serialization format for pipeline checkpoints (intermediate Seurat objects
+# saved in DATA_CHECKPOINT_DIR). Set once here — every checkpoint save/load
+# in downstream scripts honors this switch, so a run never mixes formats:
+#   1 = qs2 (fast, multithreaded ZSTD compression — recommended)
+#   2 = rds (base R, slower single-threaded gzip, but universally readable)
+CHECKPOINT_FORMAT <- 1
+
 
 # --- REPRODUCIBILITY MECHANICS ---
 # ****************************************************************************#
@@ -77,23 +84,99 @@ library(FNN)
 library(cluster)
 
 
-# --- PARALLEL PROCESSING ---
+# --- PARALLEL PROCESSING & FAST SERIALIZATION ---
 # ****************************************************************************#
-# - `future`: Parallel/asynchronous processing backend.
-# - `furrr` / `purrr`: purrr-flavored parallel map() functions built on
-#   `future`, used for parallelizing per-sample operations (e.g. loading
-#   QC-filtered `.rds` files in Step 2).
+# - `future`: Parallel/asynchronous processing backend. Provides the
+#   `plan()`-based worker pools that Seurat (e.g. RPCA integration) and
+#   `furrr` both dispatch onto.
+# - `furrr` / `purrr`: purrr-flavored map() functions — `purrr` for readable
+#   sequential iteration, `furrr` for its drop-in parallel equivalents built
+#   on `future` (e.g. `future_map()` loading all QC-filtered samples
+#   simultaneously in Step 2).
+# - `qs2`: Successor to the `qs` package for fast object serialization.
+#   Used for pipeline checkpoints (merged/integrated Seurat objects) —
+#   multithreaded ZSTD compression makes saving/loading multi-GB objects
+#   several-fold faster than base `saveRDS()`/`readRDS()`, at smaller file
+#   sizes. Thread count is driven by `N_WORKERS` (set below). Note: the
+#   `.qs2` format is NOT compatible with the older `.qs` format.
 library(future)
 library(furrr)
 library(purrr)
+library(qs2)
 
+
+# --- SET WORKER/CPU COUNT ---
+# ****************************************************************************#
+# Determine worker/CPU count for downstream parallel processing:
+#   - If running under a job scheduler (SLURM), respect the allocation and
+#     leave 1 core free for OS/monitoring overhead.
+#   - Otherwise assume this is a shared interactive machine (e.g. a lab
+#     workstation) and cap usage at 4 cores, regardless of how many the
+#     machine physically has, to avoid starving other users.
+# NOTE: This block must precede the FUTURE EXPORT SIZE CAP below, which
+# reuses SLURM_ALLOC to resolve --mem-per-cpu allocations.
+
+# Count number of CPUs available in SLURM scheduler
+SLURM_ALLOC <- Sys.getenv("SLURM_CPUS_PER_TASK", unset = NA)
+
+# Set number of workers/CPUs depending on environment
+if (!is.na(SLURM_ALLOC)) {
+    N_WORKERS <- max(1, as.integer(SLURM_ALLOC) - 1)
+    cat("Scheduler detected (SLURM) - using", N_WORKERS, "worker(s)\n")
+} else {
+    N_WORKERS <- min(4, max(1, parallel::detectCores() - 1))
+    cat("No scheduler detected - shared environment cap:", N_WORKERS, "worker(s)\n")
+}
+
+
+# --- FUTURE EXPORT SIZE CAP ---
+# ****************************************************************************#
 # `future.globals.maxSize` caps how much data `future` can serialize and
-# export to each parallel worker in one go. 20GB is a placeholder — right-size
-# this to your actual merged object size once samples are loaded (Step 2):
-#   OBJ_SIZE_GB <- as.numeric(object.size(SEURAT_OBJ)) / 1024^3
-#   options(future.globals.maxSize = ceiling(OBJ_SIZE_GB * 3) * 1024^3)
-# and keep it comfortably under whatever --mem your srun/sbatch job requests.
-options(future.globals.maxSize = 20 * 1024^3)
+# export to each parallel worker in one go. Resolution order:
+#   1. Under SLURM (auto-detected): allow up to 80% of the job's memory
+#      allocation, so exports can never exceed what the scheduler granted.
+#      SLURM reports memory via SLURM_MEM_PER_NODE (--mem) or
+#      SLURM_MEM_PER_CPU (--mem-per-cpu × CPUs), both in MB.
+#   2. Interactive local session: prompt the user (default 4GB — safe for
+#      laptops; the full 8-sample dataset may need 8GB+ at RPCA).
+#   3. Non-interactive local session (Rscript, no scheduler): fall back to
+#      the 4GB default silently.
+# If a later step errors with "total size of globals exceeds maximum",
+# re-run with a larger value or raise it on the fly:
+#   options(future.globals.maxSize = 8 * 1024^3)
+
+SLURM_MEM_NODE <- Sys.getenv("SLURM_MEM_PER_NODE", unset = NA)
+SLURM_MEM_CPU  <- Sys.getenv("SLURM_MEM_PER_CPU",  unset = NA)
+
+if (!is.na(SLURM_MEM_NODE)) {
+    ALLOC_MEM_GB <- as.numeric(SLURM_MEM_NODE) / 1024
+} else if (!is.na(SLURM_MEM_CPU) && !is.na(SLURM_ALLOC)) {
+    ALLOC_MEM_GB <- as.numeric(SLURM_MEM_CPU) * as.integer(SLURM_ALLOC) / 1024
+} else {
+    ALLOC_MEM_GB <- NA
+}
+
+if (!is.na(ALLOC_MEM_GB)) {
+    # Case 1: SLURM allocation found — no prompt needed
+    MAX_GLOBALS_GB <- floor(ALLOC_MEM_GB * 0.8)
+    cat("Scheduler detected (SLURM) - future export cap:", MAX_GLOBALS_GB, "GB\n")
+
+} else if (interactive()) {
+    # Case 2: local interactive session — ask the user
+    USER_INPUT <- readline(
+        prompt = "Max memory (GB) for parallel worker exports [default 4]: "
+    )
+    USER_GB <- suppressWarnings(as.numeric(USER_INPUT))
+    MAX_GLOBALS_GB <- if (!is.na(USER_GB) && USER_GB > 0) USER_GB else 4
+    cat("Future export cap set to:", MAX_GLOBALS_GB, "GB\n")
+
+} else {
+    # Case 3: non-interactive, no scheduler — silent conservative default
+    MAX_GLOBALS_GB <- 4
+    cat("No scheduler detected (non-interactive) - default cap:", MAX_GLOBALS_GB, "GB\n")
+}
+
+options(future.globals.maxSize = MAX_GLOBALS_GB * 1024^3)
 
 
 # --- PIPELINE LOGGING UTILITY ---
@@ -178,29 +261,6 @@ cat("  • Checkpoint Vault:", DATA_CHECKPOINT_DIR, "\n\n")
 # Applies a consistent, publication-friendly theme across every plot
 # generated downstream, so individual plotting blocks don't need to repeat it.
 theme_set(theme_classic(base_size = 12))
-
-
-# --- SET WORKER/CPU COUNT ---
-# ****************************************************************************#
-# Determine worker/CPU count for downstream parallel processing:
-#   - If running under a job scheduler (SLURM), respect the allocation and
-#     leave 1 core free for OS/monitoring overhead.
-#   - Otherwise assume this is a shared interactive machine (e.g. a lab
-#     workstation) and cap usage at 4 cores, regardless of how many the
-#     machine physically has, to avoid starving other users.
-
-# Count number of CPUs available in SLURM scheduler
-SLURM_ALLOC <- Sys.getenv("SLURM_CPUS_PER_TASK", unset = NA)
-
-
-# Set number of workers/CPUs depending on environment
-if (!is.na(SLURM_ALLOC)) {
-    N_WORKERS <- max(1, as.integer(SLURM_ALLOC) - 1)
-    cat("Scheduler detected (SLURM) - using", N_WORKERS, "worker(s)\n")
-} else {
-    N_WORKERS <- min(4, max(1, parallel::detectCores() - 1))
-    cat("No scheduler detected - shared environment cap:", N_WORKERS, "worker(s)\n")
-}
 
 
 # --- ENVIRONMENT VERIFICATION ---
