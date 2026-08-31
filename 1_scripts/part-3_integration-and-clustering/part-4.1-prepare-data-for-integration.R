@@ -20,12 +20,14 @@
 #   cell name. This merge does NOT pool counts into one matrix — Seurat 5
 #   keeps each sample's counts as its own layer inside the RNA assay (more on
 #   this in step 3).
-merged_seurat <- merge(
-  x = seurat_list[[1]],
-  y = seurat_list[-1],
-  add.cell.ids = names(seurat_list),
-  project = "GSE174609_Integration"
-)
+merged_seurat <- LOG_STEP("Merging all samples (for integration)...", {
+  merge(
+    x = seurat_list[[1]],
+    y = seurat_list[-1],
+    add.cell.ids = names(seurat_list),
+    project = "GSE174609_Integration"
+  )
+})
 
 
 # --- 2. Recover sample-level metadata from cell names ---
@@ -61,7 +63,7 @@ merged_seurat <- merged_seurat %>%
 # ****************************************************************************#
 #   Seurat 5 integration methods operate on a MULTI-LAYER assay — one layer
 #   of counts per sample — rather than one pooled layer. Depending on Seurat
-#   version/settings, `merge()` may already leave the assay split; this check
+#   version/settings, `merge()` may already leave the assay split. This check
 #   avoids redundantly re-splitting (and the associated recompute cost) if
 #   it's already in the right shape.
 current_layers <- Layers(merged_seurat[["RNA"]])
@@ -80,7 +82,7 @@ if (length(current_layers) > 1) {
 #   computed independently within each sample's layer, so normalization and
 #   HVG selection aren't influenced by between-sample technical differences
 #   before integration has a chance to correct for them. This mirrors the
-#   naive-merge workflow from Part 3, but the layer-splitting above is what
+#   naive-merge workflow from Part 3.3A, but the layer-splitting above is what
 #   makes it integration-ready rather than just another naive merge.
 merged_seurat <- LOG_STEP("Preparing data for integration (normalize, HVGs, scale, PCA)...", {
   merged_seurat %>%
