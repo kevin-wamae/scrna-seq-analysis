@@ -85,7 +85,7 @@ cat("Clustering complete:", length(unique(merged_naive$seurat_clusters)), "clust
 # save the merged object to disk in the chosen format
 if (CHECKPOINT_FORMAT == 1) {
   CHECKPOINT_FILE <- file.path(
-    DATA_CHECKPOINT_DIR, "01_merged_naive_clustered.qs2"
+    DATA_CHECKPOINT_DIR, "01_merged_naive.qs2"
   )
   LOG_STEP(sprintf(
     "Saving naive merge checkpoint (qs2, %d threads)...", N_WORKERS
@@ -95,7 +95,7 @@ if (CHECKPOINT_FORMAT == 1) {
 
 } else if (CHECKPOINT_FORMAT == 2) {
   CHECKPOINT_FILE <- file.path(
-    DATA_CHECKPOINT_DIR, "01_merged_naive_clustered.rds"
+    DATA_CHECKPOINT_DIR, "01_merged_naive.rds"
   )
   LOG_STEP("Saving naive merge checkpoint (rds, single-threaded)...", {
     saveRDS(merged_naive, CHECKPOINT_FILE)
