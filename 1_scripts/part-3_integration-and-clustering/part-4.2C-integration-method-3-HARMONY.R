@@ -69,3 +69,69 @@ integrated_harmony <- LOG_STEP("Clustering and UMAP on Harmony embedding...", {
 
 cat("Harmony integration complete:", length(unique(integrated_harmony$seurat_clusters)), "clusters\n")
 # Harmony integration complete: 21 clusters
+
+
+# --- 4. Checkpoint: Persist the Harmony-Integrated Object to Disk ---
+# ****************************************************************************#
+#   `integrated_harmony` is needed again later (comparison UMAPs and mixing
+#   metrics) — checkpointing here means a crashed job never repeats it.
+#
+#   The serialization format is governed by CHECKPOINT_FORMAT, set once in
+#   Step 3.1 (1 = qs2, 2 = rds). qs2 multithreads its compression via
+#   RcppParallel, reusing the N_WORKERS count also resolved in Step 3.1;
+#   rds ignores thread counts.
+
+# save the integrated object to disk in the chosen format
+if (CHECKPOINT_FORMAT == 1) {
+    CHECKPOINT_FILE <- file.path(
+        DATA_CHECKPOINT_DIR, "04_integrated_harmony.qs2"
+    )
+    LOG_STEP(sprintf(
+        "Saving Harmony checkpoint (qs2, %d threads)...", N_WORKERS
+    ), {
+        qs2::qs_save(integrated_harmony, CHECKPOINT_FILE, nthreads = N_WORKERS)
+    })
+
+} else if (CHECKPOINT_FORMAT == 2) {
+    CHECKPOINT_FILE <- file.path(
+        DATA_CHECKPOINT_DIR, "04_integrated_harmony.rds"
+    )
+    LOG_STEP("Saving Harmony checkpoint (rds, single-threaded)...", {
+        saveRDS(integrated_harmony, CHECKPOINT_FILE)
+    })
+} else {
+    stop("CHECKPOINT_FORMAT must be 1 (qs2) or 2 (rds)")
+}
+
+# print the path to the checkpoint file
+cat("✓ Checkpoint written:", CHECKPOINT_FILE, "\n\n")
+
+
+# ****************************************************************************#
+# SUMMARY & PIPELINE MILESTONE TRANSITION
+# ****************************************************************************#
+# WHERE WE STARTED:
+#   Step 4.2B left us with two anchor-based corrected embeddings (CCA,
+#   RPCA), both operating through IntegrateLayers() on the same split-layer
+#   object.
+#
+# WHAT WE HAVE ACCOMPLISHED:
+#   We ran the third of four integration methods, and the first
+#   non-anchor-based one. Harmony joined the layers into a fresh object,
+#   computed an uncorrected PCA, then iteratively adjusted that embedding
+#   in place to remove batch structure — writing "harmony" plus its
+#   clustering and UMAP ("umap.harmony") into the object, yielding 21
+#   clusters (vs CCA's 23, RPCA's 22). The result is checkpointed to disk,
+#   so this step never needs to be repeated. Three integration strategies —
+#   two anchor-based, one iterative — are now represented side-by-side.
+#
+# WHERE WE ARE HEADING (STEP 4.2D — FASTMNN):
+#   FastMNN returns to the anchor-based family, but with a different
+#   philosophy from CCA/RPCA: rather than assuming samples share broad
+#   structure, it finds mutual nearest neighbours — pairs of cells that are
+#   each other's closest match across batches — and corrects conservatively
+#   around them. Like CCA and RPCA, it operates through IntegrateLayers()
+#   on the original `merged_seurat` object's split layers (not
+#   `merged_harmony`), and is the fourth and final method added to our
+#   comparison set.
+# ****************************************************************************#
