@@ -63,6 +63,42 @@ cat("RPCA integration complete:", length(unique(integrated_rpca$seurat_clusters)
 # RPCA integration complete: 22 clusters
 
 
+# --- 3. Checkpoint: Persist the RPCA-Integrated Object to Disk ---
+# ****************************************************************************#
+#   `integrated_rpca` is needed again later (comparison UMAPs and mixing
+#   metrics) — checkpointing here means a crashed job never repeats it.
+#
+#   The serialization format is governed by CHECKPOINT_FORMAT, set once in
+#   Step 3.1 (1 = qs2, 2 = rds). qs2 multithreads its compression via
+#   RcppParallel, reusing the N_WORKERS count also resolved in Step 3.1;
+#   rds ignores thread counts.
+
+# save the integrated object to disk in the chosen format
+if (CHECKPOINT_FORMAT == 1) {
+    CHECKPOINT_FILE <- file.path(
+        DATA_CHECKPOINT_DIR, "03_integrated_rpca.qs2"
+    )
+    LOG_STEP(sprintf(
+        "Saving RPCA checkpoint (qs2, %d threads)...", N_WORKERS
+    ), {
+        qs2::qs_save(integrated_rpca, CHECKPOINT_FILE, nthreads = N_WORKERS)
+    })
+
+} else if (CHECKPOINT_FORMAT == 2) {
+    CHECKPOINT_FILE <- file.path(
+        DATA_CHECKPOINT_DIR, "03_integrated_rpca.rds"
+    )
+    LOG_STEP("Saving RPCA checkpoint (rds, single-threaded)...", {
+        saveRDS(integrated_rpca, CHECKPOINT_FILE)
+    })
+} else {
+    stop("CHECKPOINT_FORMAT must be 1 (qs2) or 2 (rds)")
+}
+
+# print the path to the checkpoint file
+cat("✓ Checkpoint written:", CHECKPOINT_FILE, "\n\n")
+
+
 # ****************************************************************************#
 # SUMMARY & PIPELINE MILESTONE TRANSITION
 # ****************************************************************************#
@@ -76,8 +112,9 @@ cat("RPCA integration complete:", length(unique(integrated_rpca$seurat_clusters)
 #   reciprocal PCA projections — a faster, lighter, more conservative
 #   correction than CCA — and wrote its own embedding ("integrated.rpca")
 #   plus clustering and UMAP ("umap.rpca") into the object, yielding 22
-#   clusters (vs CCA's 23). Both anchor-based methods are now represented
-#   side-by-side, ready for head-to-head comparison.
+#   clusters (vs CCA's 23). The result is checkpointed to disk, so this
+#   step never needs to be repeated. Both anchor-based methods are now
+#   represented side-by-side, ready for head-to-head comparison.
 #
 # WHERE WE ARE HEADING (STEP 4.2C — HARMONY):
 #   Both methods so far are anchor-based and operate through Seurat's
