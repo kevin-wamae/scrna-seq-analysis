@@ -76,22 +76,22 @@ cat("CCA integration complete:", length(unique(integrated_cca$seurat_clusters)),
 
 # save the integrated object to disk in the chosen format
 if (CHECKPOINT_FORMAT == 1) {
-  CHECKPOINT_FILE <- file.path(
-    DATA_CHECKPOINT_DIR, "03_integrated_cca.qs2"
-  )
-  LOG_STEP(sprintf(
-    "Saving CCA checkpoint (qs2, %d threads)...", N_WORKERS
-  ), {
-    qs2::qs_save(integrated_cca, CHECKPOINT_FILE, nthreads = N_WORKERS)
-  })
+    CHECKPOINT_FILE <- file.path(
+        DATA_CHECKPOINT_DIR, "02_integrated_cca.qs2"
+    )
+    LOG_STEP(sprintf(
+        "Saving CCA checkpoint (qs2, %d threads)...", N_WORKERS
+    ), {
+        qs2::qs_save(integrated_cca, CHECKPOINT_FILE, nthreads = N_WORKERS)
+    })
 
 } else if (CHECKPOINT_FORMAT == 2) {
-  CHECKPOINT_FILE <- file.path(
-    DATA_CHECKPOINT_DIR, "03_integrated_cca.rds"
-  )
-  LOG_STEP("Saving CCA checkpoint (rds, single-threaded)...", {
-    saveRDS(integrated_cca, CHECKPOINT_FILE)
-  })
+    CHECKPOINT_FILE <- file.path(
+        DATA_CHECKPOINT_DIR, "02_integrated_cca.rds"
+    )
+    LOG_STEP("Saving CCA checkpoint (rds, single-threaded)...", {
+        saveRDS(integrated_cca, CHECKPOINT_FILE)
+    })
 } else {
   stop("CHECKPOINT_FORMAT must be 1 (qs2) or 2 (rds)")
 }
