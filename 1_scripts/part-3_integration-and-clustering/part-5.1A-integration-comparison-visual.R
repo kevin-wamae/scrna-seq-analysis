@@ -4,6 +4,10 @@
 # TODO: Define color palettes in 3.1 to standardize colors across all plots
 #       across all plots to ensure that the same sample/condition is always
 #       the same color throughout the analysis pipeline.
+# TODO: Consider creating a separate script for loading the Seurat objects
+#       from the checkpoint directory because subsequent steps in the
+#       need them and a user may not be able to debug the cause of missing
+#       data
 
 # ****************************************************************************#
 # --- WHY THIS STEP EXISTS ---
@@ -61,8 +65,10 @@ cat("  Conditions:", paste(unique(sample_metadata$condition), collapse = ", "), 
 #   error, DimPlot just silently falls back to its default palette for that
 #   condition.
 sample_colors <- c(
-    "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", # Healthy 1-4: Red, Blue, Green, Purple
-    "#FF7F00", "#A65628", "#F781BF", "#999999"  # Post_Patient 1-4: Orange, Brown, Pink, Gray
+    # Healthy
+    "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
+    # Post_Patient
+    "#FF7F00", "#A65628", "#F781BF", "#999999"Gray
 )
 names(sample_colors) <- sample_metadata$sample_id
 
@@ -188,14 +194,14 @@ p_sample_mnn <- make_comparison_plot(
 combined_samples <- (p_sample_naive | p_sample_cca | p_sample_rpca) /
     (p_sample_harmony | p_sample_mnn | plot_spacer())
 
-SAMPLE_COMPARISON_PATH <- file.path(
-    PLOTS_COMPARISON_DIR, "02_integration_by_sample.png"
-)
+# Save comparison by sample image
 ggsave(
-    SAMPLE_COMPARISON_PATH,
+    file.path(PLOTS_COMPARISON_DIR, "02_integration_by_sample.png"),
     plot = combined_samples, width = 16, height = 12, dpi = 300
 )
-cat("→ Saved:", SAMPLE_COMPARISON_PATH, "\n")
+
+# Print output message
+cat("→ Saved: ", file.path(PLOTS_COMPARISON_DIR, "02_integration_by_sample.png"), "\n")
 cat("   Look for samples interleaving within shared clusters (good) vs\n")
 cat("   forming isolated single-sample islands (batch effect persists)\n\n")
 
@@ -231,14 +237,14 @@ p_cond_mnn <- make_comparison_plot(
 combined_conditions <- (p_cond_naive | p_cond_cca | p_cond_rpca) /
     (p_cond_harmony | p_cond_mnn | plot_spacer())
 
-CONDITION_COMPARISON_PATH <- file.path(
-    PLOTS_COMPARISON_DIR, "03_integration_by_condition.png"
-)
+# Save comparison by condition image
 ggsave(
-    CONDITION_COMPARISON_PATH,
+    file.path(PLOTS_COMPARISON_DIR, "03_integration_by_condition.png"),
     plot = combined_conditions, width = 16, height = 12, dpi = 300
 )
-cat("→ Saved:", CONDITION_COMPARISON_PATH, "\n")
+
+# Print output message
+cat("→ Saved: ", file.path(PLOTS_COMPARISON_DIR, "03_integration_by_condition.png"), "\n")
 cat("   Look for condition-driven separation surviving correction (good) vs\n")
 cat("   conditions blending together indiscriminately (over-correction)\n\n")
 
