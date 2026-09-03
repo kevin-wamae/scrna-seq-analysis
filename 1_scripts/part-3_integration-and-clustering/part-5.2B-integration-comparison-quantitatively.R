@@ -1,6 +1,10 @@
 # ****************************************************************************#
-# STEP 5.1B: Calculate integration quality metrics
+# STEP 5.2B: Calculate integration quality metrics
 # ****************************************************************************#
+# NOTE: Requires Step 5.1 (load-seurat-object-checkpoints) to have already
+#       run in this session — that step is what populates `merged_naive`,
+#       `integrated_cca`, `integrated_rpca`, `integrated_harmony`, and
+#       `integrated_fastmnn`.
 
 # --- WHY THIS STEP EXISTS ---
 # ****************************************************************************#
@@ -8,7 +12,7 @@
 #   naive merge. Now that we have four independently integrated objects
 #   (CCA, RPCA, Harmony, FastMNN) sitting alongside that naive baseline, we
 #   need one comparable number per method to objectively say which
-#   correction actually worked best — a visual UMAP impression (Step 5.1A)
+#   correction actually worked best — a visual UMAP impression (Step 5.2A)
 #   isn't citable evidence on its own.
 #
 #   QUANTITATIVE COMPARISON: MIXING AND SEPARATION METRICS
@@ -65,8 +69,8 @@ calculate_mixing_metric <- function(seurat_obj, group_by = "sample_id",
 
 # --- 3. Define the Methods to Compare ---
 # ****************************************************************************#
-#   One entry per checkpointed object from Steps 3.3A / 4.2A-D, paired with
-#   the UMAP reduction each method produced. Keeping this as a single named
+#   One entry per checkpointed object loaded in Step 5.1, paired with the
+#   UMAP reduction each method produced. Keeping this as a single named
 #   list is what lets the rest of the step iterate with purrr instead of
 #   repeating the same calculation five times by hand.
 methods_list <- list(
@@ -80,10 +84,11 @@ methods_list <- list(
 
 # --- 4. Calculate Mixing Score and Cluster Count for Each Method ---
 # ****************************************************************************#
-#   `map_dfr()` iterates the helper over every method and row-binds the
-#   results straight into a tidy data frame, replacing the two parallel
-#   sapply() calls (one for mixing_score, one for n_clusters) with a single
-#   pass that keeps each method's two metrics together.
+#   `imap_dfr()` iterates the helper over every method and row-binds the
+#   results straight into a tidy data frame, replacing what would otherwise
+#   be two parallel sapply() calls (one for mixing_score, one for
+#   n_clusters) with a single pass that keeps each method's two metrics
+#   together.
 mixing_results <- LOG_STEP("Calculating integration mixing scores across all methods...", {
     methods_list %>%
         imap_dfr(function(method_info, method_name) {
@@ -160,16 +165,16 @@ cat("→ Saved:", file.path(PLOTS_COMPARISON_DIR, "04_mixing_scores.png"), "\n\n
 #   04_mixing_scores.png, letting us rank methods by mixing quality instead
 #   of eyeballing UMAP panels.
 #
-# WHERE WE ARE HEADING (STEP 13 — ASSESSING BIOLOGICAL SIGNAL PRESERVATION):
+# WHERE WE ARE HEADING (NEXT: ASSESSING BIOLOGICAL SIGNAL PRESERVATION):
 #   A high mixing score alone isn't the whole story: integration is a
 #   balancing act between removing technical variation (samples mixing)
 #   and preserving real biological variation (Healthy vs Post-Treatment
 #   remaining distinguishable). A method that mixes everything together
 #   indiscriminately may have over-integrated, blending away genuine
-#   disease signal along with the batch noise. Step 13 complements this
-#   step's mixing score with a condition-separation metric — the distance
-#   between each condition's mean UMAP position — so we can look for the
-#   combination that actually indicates good integration: high mixing
-#   *and* moderate-to-high condition separation, not just one or the
-#   other.
+#   disease signal along with the batch noise. The next step complements
+#   this step's mixing score with a condition-separation metric — the
+#   distance between each condition's mean UMAP position — so we can look
+#   for the combination that actually indicates good integration: high
+#   mixing *and* moderate-to-high condition separation, not just one or
+#   the other.
 # ****************************************************************************#
