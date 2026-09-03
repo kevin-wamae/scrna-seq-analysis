@@ -84,20 +84,22 @@ methods_list <- list(
 #   results straight into a tidy data frame, replacing the two parallel
 #   sapply() calls (one for mixing_score, one for n_clusters) with a single
 #   pass that keeps each method's two metrics together.
-mixing_results <- methods_list %>%
-    imap_dfr(function(method_info, method_name) {
-        tibble(
-            method = method_name,
-            mixing_score = calculate_mixing_metric(
-                method_info$obj,
-                group_by  = "sample_id",
-                reduction = method_info$reduction
-            ),
-            n_clusters = method_info$obj$seurat_clusters %>%
-                unique() %>%
-                length()
-        )
-    })
+mixing_results <- LOG_STEP("Calculating integration mixing scores across all methods...", {
+    methods_list %>%
+        imap_dfr(function(method_info, method_name) {
+            tibble(
+                method = method_name,
+                mixing_score = calculate_mixing_metric(
+                    method_info$obj,
+                    group_by  = "sample_id",
+                    reduction = method_info$reduction
+                ),
+                n_clusters = method_info$obj$seurat_clusters %>%
+                    unique() %>%
+                    length()
+            )
+        })
+})
 
 # Display results
 cat("\nIntegration Quality Metrics:\n")
@@ -109,9 +111,11 @@ print(mixing_results)
 # ****************************************************************************#
 #   Uses METADATA_OUT_DIR, registered back in Step 3.1's dynamic output-path
 #   setup, rather than hardcoding the date-stamped job run path here.
-METRICS_PATH <- file.path(METADATA_OUT_DIR, "integration_comparison_metrics.csv")
-write.csv(mixing_results, METRICS_PATH, row.names = FALSE)
-cat("→ Saved:", METRICS_PATH, "\n")
+write.csv(mixing_results,
+    file.path(METADATA_OUT_DIR, "integration_comparison_metrics.csv"),
+    row.names = FALSE
+)
+cat("→ Saved:", file.path(METADATA_OUT_DIR, "integration_comparison_metrics.csv"), "\n")
 
 
 # --- 6. Visualize Mixing Scores ---
@@ -132,9 +136,11 @@ p_mixing <- mixing_results %>%
     theme(legend.position = "none") +
     scale_fill_brewer(palette = "Set2")
 
-MIXING_PLOT_PATH <- file.path(PLOTS_COMPARISON_DIR, "04_mixing_scores.png")
-ggsave(MIXING_PLOT_PATH, p_mixing, width = 10, height = 6, dpi = 300)
-cat("→ Saved:", MIXING_PLOT_PATH, "\n\n")
+# Save mixing scores image
+ggsave(file.path(PLOTS_COMPARISON_DIR, "04_mixing_scores.png"),
+    p_mixing, width = 10, height = 6, dpi = 300
+)
+cat("→ Saved:", file.path(PLOTS_COMPARISON_DIR, "04_mixing_scores.png"), "\n\n")
 
 
 # ****************************************************************************#
