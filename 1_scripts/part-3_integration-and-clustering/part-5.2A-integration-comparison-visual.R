@@ -1,13 +1,13 @@
 # ****************************************************************************#
-# STEP 5.1A: Generate integration comparison UMAPs
+# STEP 5.2A: Generate integration comparison UMAPs
 # ****************************************************************************#
 # TODO: Define color palettes in 3.1 to standardize colors across all plots
 #       across all plots to ensure that the same sample/condition is always
 #       the same color throughout the analysis pipeline.
-# TODO: Consider creating a separate script for loading the Seurat objects
-#       from the checkpoint directory because subsequent steps in the
-#       need them and a user may not be able to debug the cause of missing
-#       data
+# NOTE: Requires Step 5.1 (load-seurat-object-checkpoints) to have already
+#       run in this session — that step is what populates `merged_naive`,
+#       `integrated_cca`, `integrated_rpca`, `integrated_harmony`, and
+#       `integrated_fastmnn`.
 
 # ****************************************************************************#
 # --- WHY THIS STEP EXISTS ---
@@ -18,8 +18,7 @@
 #   in isolation, but a number alone can't tell you which correction actually
 #   worked best — that requires looking at all five side-by-side.
 #
-#   This step reloads all five checkpoints fresh from disk (rather than
-#   relying on in-memory objects from previous steps in this script) and
+#   This step takes the five checkpointed objects loaded by Step 5.1 and
 #   renders two comparison grids:
 #     - By SAMPLE: does each method actually mix samples together, or do
 #       patient-specific islands persist?
@@ -68,7 +67,7 @@ sample_colors <- c(
     # Healthy
     "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
     # Post_Patient
-    "#FF7F00", "#A65628", "#F781BF", "#999999"Gray
+    "#FF7F00", "#A65628", "#F781BF", "#999999"
 )
 names(sample_colors) <- sample_metadata$sample_id
 
@@ -105,65 +104,7 @@ make_comparison_plot <- function(seurat_obj, reduction_name, title,
 }
 
 
-# --- 4. Load All Five Checkpointed Objects ---
-# ****************************************************************************#
-#   Loads the naive baseline (Step 3.3A) plus all four integration methods
-#   (Steps 4.2A-D) back from the checkpoint vault built in Step 3.1
-#   (`DATA_CHECKPOINT_DIR`).
-#
-#   FORMAT HANDLING: `CHECKPOINT_FORMAT` (set once in Step 3.1: 1 = qs2,
-#   2 = rds) governs every checkpoint read/write in this pipeline. This
-#   loader respects that same switch rather than hardcoding `qs2::qs_read()`,
-#   so a run configured for `rds` doesn't silently fail here.
-
-# Create a named vector of checkpoint names to load
-CHECKPOINT_NAMES <- c(
-    naive   = "01_merged_naive",
-    cca     = "02_integrated_cca",
-    rpca    = "03_integrated_rpca",
-    harmony = "04_integrated_harmony",
-    fastmnn = "05_integrated_fastmnn"
-)
-
-# Get the checkpoint extension based on the checkpoint format
-CHECKPOINT_EXT <- if (CHECKPOINT_FORMAT == 1) {
-    "qs2"
-} else if (CHECKPOINT_FORMAT == 2) {
-    "rds"
-} else {
-    stop("CHECKPOINT_FORMAT must be 1 (qs2) or 2 (rds)")
-}
-
-# Helper function to load a checkpoint
-load_checkpoint <- function(name) {
-    path <- file.path(DATA_CHECKPOINT_DIR, paste0(name, ".", CHECKPOINT_EXT))
-    if (CHECKPOINT_FORMAT == 1) {
-        qs2::qs_read(path)
-    } else {
-        readRDS(path)
-    }
-}
-
-# Load all checkpoints
-CHECKPOINTS <- LOG_STEP("Loading all 5 checkpointed objects for comparison...", {
-    setNames(
-        lapply(CHECKPOINT_NAMES, load_checkpoint),
-        names(CHECKPOINT_NAMES)
-    )
-})
-
-# Extract the Seurat objects from the named vector
-merged_naive        <- CHECKPOINTS$naive
-integrated_cca      <- CHECKPOINTS$cca
-integrated_rpca     <- CHECKPOINTS$rpca
-integrated_harmony  <- CHECKPOINTS$harmony
-integrated_fastmnn  <- CHECKPOINTS$fastmnn
-
-# Print summary of loaded checkpoints
-cat("✓ All 5 checkpoints loaded\n\n")
-
-
-# --- 5. Build Comparison Panels: Colored by Sample (Mixing Check) ---
+# --- 4. Build Comparison Panels: Colored by Sample (Mixing Check) ---
 # ****************************************************************************#
 #   Five panels, one per method, all colored the same way (by sample_id).
 #   A method that successfully corrected batch effects should show samples
@@ -206,13 +147,13 @@ cat("   Look for samples interleaving within shared clusters (good) vs\n")
 cat("   forming isolated single-sample islands (batch effect persists)\n\n")
 
 
-# --- 6. Build Comparison Panels: Colored by Condition (Biology Check) ---
+# --- 5. Build Comparison Panels: Colored by Condition (Biology Check) ---
 # ****************************************************************************#
-#   The counterpart check to Step 5: correcting batch effects is only a
-#   win if real biological signal (Healthy vs Post-Treatment) is preserved
-#   alongside it. A method that blends conditions together as thoroughly as
-#   it blends samples has likely over-corrected, erasing genuine disease
-#   signal along with the technical noise.
+#   The counterpart check to Section 4 above: correcting batch effects is
+#   only a win if real biological signal (Healthy vs Post-Treatment) is
+#   preserved alongside it. A method that blends conditions together as
+#   thoroughly as it blends samples has likely over-corrected, erasing
+#   genuine disease signal along with the technical noise.
 p_cond_naive <- make_comparison_plot(
     merged_naive, "umap", "Naive Merge", "condition",
     colors = condition_colors
@@ -253,20 +194,20 @@ cat("   conditions blending together indiscriminately (over-correction)\n\n")
 # SUMMARY & PIPELINE MILESTONE TRANSITION
 # ****************************************************************************#
 # WHERE WE STARTED:
-#   Previous Steps left us with five independently checkpointed objects on
-#   disk — the naive baseline plus four integration methods — each only
-#   evaluated in isolation via its own cluster count.
+#   Step 5.1 left us with five checkpointed objects loaded into memory — the
+#   naive baseline plus four integration methods — each only evaluated in
+#   isolation via its own cluster count.
 #
 # WHAT WE HAVE ACCOMPLISHED:
-#   We reloaded all five checkpoints together and rendered two 2x3
-#   comparison grids: one colored by sample (the batch-mixing check) and
-#   one colored by condition (the biological-preservation check). These two
-#   figures (02_integration_by_sample.png, 03_integration_by_condition.png)
-#   are now the direct visual evidence for judging which method, if any,
-#   best balances removing technical batch effects against preserving real
+#   We rendered two 2x3 comparison grids from those five objects: one
+#   colored by sample (the batch-mixing check) and one colored by condition
+#   (the biological-preservation check). These two figures
+#   (02_integration_by_sample.png, 03_integration_by_condition.png) are now
+#   the direct visual evidence for judging which method, if any, best
+#   balances removing technical batch effects against preserving real
 #   Healthy-vs-Post-Treatment biological signal.
 #
-# WHERE WE ARE HEADING (STEP 5.1B — QUANTIFYING INTEGRATION SUCCESS):
+# WHERE WE ARE HEADING (STEP 5.2B — QUANTIFYING INTEGRATION SUCCESS):
 #   A visual grid is persuasive but, exactly as Step 3.3B cautioned for the
 #   naive baseline, not something you can report as a number. Next we
 #   re-apply Step 3.3C's per-cluster sample-composition statistic to all
