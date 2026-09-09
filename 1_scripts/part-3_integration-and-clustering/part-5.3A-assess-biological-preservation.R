@@ -1,5 +1,5 @@
 # ****************************************************************************#
-# STEP 5.2C: Assess biological signal preservation
+# STEP 5.3A: Assess biological signal preservation
 # ****************************************************************************#
 # NOTE: Requires Step 5.1 (load-seurat-object-checkpoints) and Step 5.2B
 #       (integration-comparison-quantitatively) to have already run in this
