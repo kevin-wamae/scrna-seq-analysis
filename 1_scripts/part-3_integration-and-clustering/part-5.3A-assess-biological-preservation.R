@@ -41,11 +41,13 @@ p_tradeoff <- ggplot(mixing_results, aes(x = mixing_score, y = condition_separat
   geom_point(size = 4, aes(color = method)) +
   geom_text_repel(size = 4, box.padding = 0.5) +
   labs(title = "Integration Quality: Mixing vs Biological Preservation",
-       subtitle = "Ideal: Upper right (high mixing + preserved biology)",
-       x = "Sample Mixing Score (higher = better integration)",
-       y = "Condition Separation (higher = preserved biology)") +
+      subtitle = "Ideal: Upper right (high mixing + preserved biology)",
+      x = "Sample Mixing Score (higher = better integration)",
+      y = "Condition Separation (higher = preserved biology)") +
   theme(legend.position = "none") +
   scale_color_brewer(palette = "Set2")
 
-ggsave("3_output/2026_06_09_brown_job_3058993/integration_and_clustering/plots/integration_comparison/05_mixing_vs_preservation.png", p_tradeoff,
-       width = 10, height = 7, dpi = 300)
+# Save mixing vs preservation image
+ggsave(file.path(PLOTS_COMPARISON_DIR, "05_mixing_vs_preservation.png"),
+    p_tradeoff, width = 10, height = 7, dpi = 300
+)
