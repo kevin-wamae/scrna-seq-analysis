@@ -8,6 +8,7 @@
 #       run in this session — that step is what populates `merged_naive`,
 #       `integrated_cca`, `integrated_rpca`, `integrated_harmony`, and
 #       `integrated_fastmnn`.
+# TODO: Add a note that this script needs to be run after Step 5.1
 
 # ****************************************************************************#
 # --- WHY THIS STEP EXISTS ---
