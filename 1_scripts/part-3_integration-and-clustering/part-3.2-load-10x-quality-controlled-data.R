@@ -3,6 +3,21 @@
 # ****************************************************************************#
 
 
+# --- PREREQUISITES (scripts that must run before this one in this session) ---
+# ****************************************************************************#
+#   • part-3.0-install-packages.R — packages for library() calls.
+#   • part-3.1-load-libraries-and-configuration.R — supplies RUN_ID,
+#     CHECKPOINT_FORMAT, LOG_STEP, and the output directory variables used
+#     below.
+#   If those are already in the environment, this block does nothing;
+#   otherwise it offers to source them (interactive) or stops with a clear
+#   message (non-interactive/batch).
+if (!exists("ensure_dependencies", inherits = TRUE)) {
+    source("1_scripts/part-3_integration-and-clustering/part-3.0.5-dependencies.R")
+}
+ensure_dependencies(step = "part-3.2-load-10x-quality-controlled-data.R")
+
+
 # --- LOAD SAMPLE METADATA (SINGLE SOURCE OF TRUTH) ---
 # ****************************************************************************#
 # Rather than re-declaring sample identities in a separate hardcoded

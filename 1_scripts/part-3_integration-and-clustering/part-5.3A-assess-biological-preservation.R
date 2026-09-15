@@ -1,6 +1,26 @@
 # ****************************************************************************#
 # STEP 5.3A: Assess biological signal preservation
 # ****************************************************************************#
+
+
+# --- PREREQUISITES (scripts that must run before this one in this session) ---
+# ****************************************************************************#
+#   • part-3.0-install-packages.R — packages for library() calls.
+#   • part-3.1-load-libraries-and-configuration.R — RUN_ID, LOG_STEP, and
+#     output-directory variables.
+#   • part-5.1-load-seurat-object-checkpoints.R — supplies the five objects
+#     scored here (via `methods_list`).
+#   • part-5.2B-integration-comparison-quantitatively.R — supplies
+#     `methods_list` and `mixing_results`, which this step extends with a
+#     `condition_separation` column.
+#   If `mixing_results` is already in the environment, this block does
+#   nothing; otherwise it offers to source the prerequisites (interactive) or
+#   stops with a clear message (non-interactive/batch).
+if (!exists("ensure_dependencies", inherits = TRUE)) {
+    source("1_scripts/part-3_integration-and-clustering/part-3.0.5-dependencies.R")
+}
+ensure_dependencies(step = "part-5.3A-assess-biological-preservation.R")
+
 # NOTE: Requires Step 5.1 (load-seurat-object-checkpoints) and Step 5.2B
 #       (integration-comparison-quantitatively) to have already run in this
 #       session — this step extends `mixing_results` and reuses

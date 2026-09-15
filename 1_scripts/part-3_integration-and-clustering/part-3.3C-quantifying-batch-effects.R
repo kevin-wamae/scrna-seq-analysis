@@ -2,6 +2,23 @@
 # STEP 3.3C: Quantify batch effects with mixing metrics
 # ****************************************************************************#
 
+
+# --- PREREQUISITES (scripts that must run before this one in this session) ---
+# ****************************************************************************#
+#   • part-3.0-install-packages.R — packages for library() calls.
+#   • part-3.1-load-libraries-and-configuration.R — RUN_ID, LOG_STEP, and
+#     output-directory variables.
+#   • part-3.2-load-10x-quality-controlled-data.R — supplies `sample_metadata`.
+#   • part-3.3A-merge-naive.R — supplies `merged_naive`, whose cluster
+#     composition is quantified here.
+#   If those objects are already in the environment, this block does nothing;
+#   otherwise it offers to source them (interactive) or stops with a clear
+#   message (non-interactive/batch).
+if (!exists("ensure_dependencies", inherits = TRUE)) {
+    source("1_scripts/part-3_integration-and-clustering/part-3.0.5-dependencies.R")
+}
+ensure_dependencies(step = "part-3.3C-quantifying-batch-effects.R")
+
 # TODO: Fix code headings to match file name
 # TODO: Rework the transition notes to align previous and upcoming sections
 #       to make a cohesive narrative for the whole analysis pipeline

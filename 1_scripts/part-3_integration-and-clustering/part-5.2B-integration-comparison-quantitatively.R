@@ -1,6 +1,24 @@
 # ****************************************************************************#
 # STEP 5.2B: Calculate integration quality metrics
 # ****************************************************************************#
+
+
+# --- PREREQUISITES (scripts that must run before this one in this session) ---
+# ****************************************************************************#
+#   • part-3.0-install-packages.R — packages for library() calls.
+#   • part-3.1-load-libraries-and-configuration.R — RUN_ID, LOG_STEP, and
+#     output-directory variables.
+#   • part-5.1-load-seurat-object-checkpoints.R — supplies the five objects
+#     scored here: `merged_naive`, `integrated_cca`, `integrated_rpca`,
+#     `integrated_harmony`, `integrated_fastmnn`.
+#   If those objects are already in the environment, this block does nothing;
+#   otherwise it offers to source the prerequisites (interactive) or stops
+#   with a clear message (non-interactive/batch).
+if (!exists("ensure_dependencies", inherits = TRUE)) {
+    source("1_scripts/part-3_integration-and-clustering/part-3.0.5-dependencies.R")
+}
+ensure_dependencies(step = "part-5.2B-integration-comparison-quantitatively.R")
+
 # NOTE: Requires Step 5.1 (load-seurat-object-checkpoints) to have already
 #       run in this session — that step is what populates `merged_naive`,
 #       `integrated_cca`, `integrated_rpca`, `integrated_harmony`, and
