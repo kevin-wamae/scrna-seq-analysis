@@ -117,6 +117,38 @@ row to `DEP_TABLE` (see "HOW TO ADD A NEW STEP" in that file) AND call
 have either; it currently relies on `integrated_final` already being in the
 session from `part-5.3B`.
 
+**10. Output file naming conventions** — everything nests under
+`3_output/<RUN_ID>/`, split by stage:
+- Part 2 (`qc_and_filtering/`): `plots/`, `filtered_data/`, `metrics/` — each
+  with a per-sample subdirectory `<sample_id>/`.
+- Part 3 (`integration_and_clustering/`): `plots/` (subdirs
+  `integration_comparison/`, `clustering/`), `integrated_data/`, `metadata/`,
+  `checkpoints/`.
+
+File types follow a strict, readable scheme (lowercase snake_case everywhere):
+- **Plots** — `NN_<slug>.png`, where `NN` is a zero-padded 2-digit run-order
+  (chronological position of the figure in the pipeline, so files sort and
+  read in narrative order) and `<slug>` the snake_case content, e.g.
+  `01_naive_merge_batch_effects.png`, `02_integration_by_sample.png`,
+  `03_integration_by_condition.png`, `04_mixing_scores.png`,
+  `05_mixing_vs_preservation.png`; part-2 QC uses e.g.
+  `03_qc_violins.png`, `04_qc_scatter.png`, `05_filtering_thresholds_log/linear.png`.
+  Two views of the same figure share a number + a `_<variant>` suffix
+  (`_log`/`_linear`). Always save via
+  `ggsave(file.path(PLOTS_OUT_DIR, "NN_slug.png"), plot = p_<slug>, width, height, dpi = 300)`;
+  plot objects are named `p_<slug>` to match.
+- **Tables / CSVs** — descriptive snake_case with **no** numeric prefix:
+  `integration_comparison_metrics.csv`, `cell_metadata.csv`, per-sample
+  `<sample_id>_QC_summary.csv`. Written with `write.csv(..., row.names = FALSE)`
+  into `metadata/` (part-3) or `metrics/` (part-2).
+- **Seurat objects / checkpoints** — `NN_<slug>.<ext>` with the same 2-digit
+  run-order prefix: `01_merged_naive`, `02_integrated_cca`,
+  `03_integrated_rpca`, `04_integrated_harmony`, `05_integrated_fastmnn`.
+  Extension is `.qs2` or `.rds` depending on `CHECKPOINT_FORMAT`; slugs are
+  mapped by the named `CHECKPOINT_NAMES` vector in part-5.1. Part-2 clean
+  sample objects are `<sample_id>_qc_filtered.rds` in `filtered_data/<sample_id>/`.
+- After every save, log the path with `cat("→ Saved:", <path>, "\n")`.
+
 ## Verification
 - No formal test framework. Syntax-check changed `.R` files:
   `Rscript -e 'invisible(parse(file = "path/to/script.R"))'`
@@ -126,7 +158,8 @@ session from `part-5.3B`.
 - Sep 2026 sessions: per-script dependency manager + PREREQUISITES headers
   (`42d4ec8`); helper renamed to `part-3.0-dependencies.R` (`f4f836f`);
   clustering at multiple resolutions added, `part-6.1` (`ec97805`); this
-  AGENTS.md added.
+  AGENTS.md added; output file naming conventions (plots/tables/checkpoints)
+  documented.
 - Pending: wire `part-6.1` into `DEP_TABLE` + add its `ensure_dependencies()`
   block; align its "STEP 15" banner/filename if we touch it later; downstream
   cell-type annotation (Part 4 scaffolded in pixi.toml, commented out).
