@@ -1,5 +1,5 @@
 # ****************************************************************************#
-# STEP 3.0.5: Dependency manager for the integration & clustering pipeline
+# STEP 3.0: Dependency manager for the integration & clustering pipeline
 # ****************************************************************************#
 #   Every script in this folder passes in-memory objects to the next one
 #   (e.g. `seurat_list`, `merged_seurat`, `mixing_results`), so a step run
@@ -211,7 +211,7 @@ dep_satisfied <- function(entry) {
 dep_resolve <- function(step) {
     if (!step %in% names(DEP_TABLE)) {
         stop("ensure_dependencies: unknown step '", step,
-             "'. Add it to DEP_TABLE in part-3.0.5-dependencies.R.")
+            "'. Please add it to DEP_TABLE in part-3.0-dependencies.R.")
     }
     seen <- character()
     order <- character()

@@ -15,7 +15,7 @@
 #   otherwise it offers to source the prerequisites (interactive) or stops
 #   with a clear message (non-interactive/batch).
 if (!exists("ensure_dependencies", inherits = TRUE)) {
-    source("1_scripts/part-3_integration-and-clustering/part-3.0.5-dependencies.R")
+    source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
 }
 ensure_dependencies(step = "part-5.2A-integration-comparison-visual.R")
 

@@ -9,7 +9,7 @@
 #   packages (colorout, SeuratWrappers) and is safe to re-run. The dependency
 #   check below confirms nothing else is required before continuing.
 if (!exists("ensure_dependencies", inherits = TRUE)) {
-    source("1_scripts/part-3_integration-and-clustering/part-3.0.5-dependencies.R")
+    source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
 }
 ensure_dependencies(step = "part-3.0-install-packages.R")
 
