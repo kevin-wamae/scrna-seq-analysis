@@ -185,6 +185,13 @@ DEP_TABLE <- list(
             exists("methods_list",  envir = .GlobalEnv, inherits = FALSE) &&
             exists("mixing_results", envir = .GlobalEnv, inherits = FALSE) &&
             "condition_separation" %in% names(mixing_results)
+    ),
+    "part-6.1-clustering-multiple-resolutions.R" = list(
+        requires = c(
+            "part-3.1-load-libraries-and-configuration.R",
+            "part-5.3B-select-best-integration-method.R"
+        ),
+        sentinel = c("integrated_final", "reduction_final")
     )
 )
 
