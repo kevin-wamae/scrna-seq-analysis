@@ -113,9 +113,11 @@ SeuratWrappers), each guarded by `if (!requireNamespace(...))`.
 sentinel objects exist, otherwise offers to source prerequisites (interactive)
 or errors with the missing list (batch). **When adding a new script**: add one
 row to `DEP_TABLE` (see "HOW TO ADD A NEW STEP" in that file) AND call
-`ensure_dependencies()` at the top — both, not one. `part-6.1` does not yet
-have either; it currently relies on `integrated_final` already being in the
-session from `part-5.3B`.
+`ensure_dependencies()` at the top — both, not one. `part-6.1` follows this
+(requires `part-3.1` + `part-5.3B`, sentinels `integrated_final` /
+`reduction_final`). Note `FindClusters()` overwrites `seurat_clusters` each
+run, so after `part-6.1` downstream code must read the `clusters_res_*`
+columns it writes.
 
 **10. Output file naming conventions** — everything nests under
 `3_output/<RUN_ID>/`, split by stage:
@@ -160,7 +162,11 @@ File types follow a strict, readable scheme (lowercase snake_case everywhere):
   clustering at multiple resolutions added, `part-6.1` (`ec97805`); this
   AGENTS.md added; output file naming conventions (plots/tables/checkpoints)
   documented.
-- Pending: wire `part-6.1` into `DEP_TABLE` + add its `ensure_dependencies()`
-  block; align its "STEP 15" banner/filename if we touch it later; downstream
-  cell-type annotation (Part 4 scaffolded in pixi.toml, commented out).
+- `part-6.1` modernized: wired into `DEP_TABLE` + `ensure_dependencies()` block,
+  "STEP 15" banner aligned to "STEP 6.1", and `clusters_res_*` columns via
+  `AddMetaData` (no colname gsub). Kept lean in scope (no added outputs/plots)
+  but fully commented, with an interpretation guide and a SUMMARY & PIPELINE
+  MILESTONE TRANSITION matching the 3_guide narrative.
+- Pending: downstream cell-type annotation (Part 4 scaffolded in pixi.toml,
+  commented out).
 - After each work session, update this section so the next session resumes.
