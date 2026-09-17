@@ -3,6 +3,19 @@
 # ****************************************************************************#
 
 
+# --- PREREQUISITES (scripts that must run before this one in this session) ---
+# ****************************************************************************#
+#   • part-3.0-install-packages.R — installs colorout & SeuratWrappers, which
+#     the library() calls below depend on.
+#   If those packages are already installed, this block does nothing;
+#   otherwise it offers to run Step 3.0 (interactive) or stops with a clear
+#   message (non-interactive/batch).
+if (!exists("ensure_dependencies", inherits = TRUE)) {
+    source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
+}
+ensure_dependencies(step = "part-3.1-load-libraries-and-configuration.R")
+
+
 # --- DECLARE PIPELINE VARIABLES ---
 # ****************************************************************************#
 # The date-stamped job run ID (from HPC scheduler) for tracking. Every output

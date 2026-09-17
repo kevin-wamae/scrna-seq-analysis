@@ -2,6 +2,23 @@
 # STEP 5.1: Load Seurat object checkpoints
 # ****************************************************************************#
 
+# --- PREREQUISITES (scripts that must run before this one in this session) ---
+# ****************************************************************************#
+#   • part-3.0-install-packages.R — packages for library() calls.
+#   • part-3.1-load-libraries-and-configuration.R — supplies RUN_ID,
+#     CHECKPOINT_FORMAT, DATA_CHECKPOINT_DIR, and LOG_STEP used to load the
+#     five checkpointed objects below.
+#   Note: the checkpoints themselves must already exist on disk (written by
+#   Steps 3.3A and 4.2A-D). This script loads them — it does not re-run those
+#   heavy computations. If the config objects are already in the environment,
+#   this block does nothing; otherwise it offers to source them (interactive)
+#   or stops with a clear message (non-interactive/batch).
+if (!exists("ensure_dependencies", inherits = TRUE)) {
+    source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
+}
+ensure_dependencies(step = "part-5.1-load-seurat-object-checkpoints.R")
+
+
 # --- WHY THIS STEP EXISTS ---
 # ****************************************************************************#
 #   Steps 3.3A, 4.2A-D produced five checkpointed objects on disk: the naive,

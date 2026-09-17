@@ -3,6 +3,22 @@
 # ****************************************************************************#
 
 
+# --- PREREQUISITES (scripts that must run before this one in this session) ---
+# ****************************************************************************#
+#   • part-3.0-install-packages.R — packages for library() calls.
+#   • part-3.1-load-libraries-and-configuration.R — RUN_ID, LOG_STEP, and
+#     output-directory variables.
+#   • part-4.1-prepare-data-for-integration.R — supplies `merged_seurat`, the
+#     split-layer object integrated below.
+#   If `merged_seurat` is already in the environment, this block does nothing;
+#   otherwise it offers to source the prerequisites (interactive) or stops
+#   with a clear message (non-interactive/batch).
+if (!exists("ensure_dependencies", inherits = TRUE)) {
+    source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
+}
+ensure_dependencies(step = "part-4.2D-integration-method-3-FastMNN.R")
+
+
 # --- HOW FASTMNN CORRECTS BATCH EFFECTS ---
 # ****************************************************************************#
 #   FastMNN finds mutual nearest neighbours — pairs of cells across two

@@ -3,6 +3,24 @@
 # ****************************************************************************#
 
 
+# --- PREREQUISITES (scripts that must run before this one in this session) ---
+# ****************************************************************************#
+#   • part-3.0-install-packages.R — packages for library() calls.
+#   • part-3.1-load-libraries-and-configuration.R — RUN_ID, LOG_STEP, and
+#     output-directory variables.
+#   • part-3.2-load-10x-quality-controlled-data.R — supplies `sample_metadata`
+#     (used to colour by sample/condition).
+#   • part-3.3A-merge-naive.R — supplies `merged_naive`, the object plotted
+#     here.
+#   If those objects are already in the environment, this block does nothing;
+#   otherwise it offers to source them (interactive) or stops with a clear
+#   message (non-interactive/batch).
+if (!exists("ensure_dependencies", inherits = TRUE)) {
+    source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
+}
+ensure_dependencies(step = "part-3.3B-visualize-batch-effects.R")
+
+
 # --- THE PURPOSE OF THIS DIAGNOSTIC ---
 # ****************************************************************************#
 #   Step 3 gave us cluster counts and cell totals, but a number can't tell

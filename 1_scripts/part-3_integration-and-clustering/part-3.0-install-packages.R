@@ -2,6 +2,17 @@
 # STEP 3.0 :Installation of R-level packages (not available via pixi/conda)
 # ****************************************************************************#
 
+
+# --- PREREQUISITES (scripts that must run before this one in this session) ---
+# ****************************************************************************#
+#   None — this is the first step of the pipeline. It only installs R-level
+#   packages (colorout, SeuratWrappers) and is safe to re-run. The dependency
+#   check below confirms nothing else is required before continuing.
+if (!exists("ensure_dependencies", inherits = TRUE)) {
+    source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
+}
+ensure_dependencies(step = "part-3.0-install-packages.R")
+
 # --- INFRASTRUCTURE BOUNDARY ---
 # Packages on conda-forge/bioconda (Seurat, Harmony, ggplot2, etc.) are managed 
 # by `pixi.toml` (`core-feature` + `part3-feature`). Do NOT add install.packages() 
