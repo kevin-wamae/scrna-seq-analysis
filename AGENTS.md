@@ -27,6 +27,13 @@ and ends with a milestone-transition summary.
   (the **single source of truth** for sample_id/condition/patient_id/QC thresholds).
 - `3_output/<RUN_ID>/` — `qc_and_filtering/` (plots, filtered_data, metrics) and
   `integration_and_clustering/` (plots, integrated_data, metadata, checkpoints).
+- `3_guide/` — tutorial clippings from ngs101.com that the scripts' commentary
+  is written against: `Part 1 - From FASTQ to Count Matrix.md`,
+  `Part 2A/2B - Quality Control and Cell Filtering.md`,
+  `Part 3 - Integration and Clustering.md`. Comments cite them as
+  "guide §<section>" / "STEP <N>", and each script's SUMMARY & PIPELINE
+  MILESTONE TRANSITION mirrors the guide's narrative — keep new steps aligned
+  with it.
 - `logs/` — HPC job logs.
 
 ## Cohort & analysis design
