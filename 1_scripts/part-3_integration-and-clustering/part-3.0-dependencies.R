@@ -192,6 +192,21 @@ DEP_TABLE <- list(
             "part-5.3B-select-best-integration-method.R"
         ),
         sentinel = c("integrated_final", "reduction_final")
+    ),
+    "part-6.2-view-multiple-resolutions-clustering.R" = list(
+        requires = c(
+            "part-3.1-load-libraries-and-configuration.R",
+            "part-6.1-clustering-multiple-resolutions.R"
+        ),
+        sentinel = c("integrated_final", "resolutions")
+    ),
+    "part-6.3-evaluate-optimal-clustering-resolution.R" = list(
+        requires = c(
+            "part-3.1-load-libraries-and-configuration.R",
+            "part-5.3B-select-best-integration-method.R",
+            "part-6.1-clustering-multiple-resolutions.R"
+        ),
+        sentinel = c("resolution_comparison", "optimal_resolution")
     )
 )
 
