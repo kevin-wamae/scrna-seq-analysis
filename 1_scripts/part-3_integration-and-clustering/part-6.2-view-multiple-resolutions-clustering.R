@@ -17,7 +17,7 @@
 if (!exists("ensure_dependencies", inherits = TRUE)) {
     source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
 }
-ensure_dependencies(step = "part-6.2-visualize-multi-resolution-clustering.R")
+ensure_dependencies(step = "part-6.2-view-multiple-resolutions-clustering.R")
 
 # NOTE: Requires Step 6.1 to have already run in this session — that step is
 #       what writes the `clusters_res_*` columns plotted below.
