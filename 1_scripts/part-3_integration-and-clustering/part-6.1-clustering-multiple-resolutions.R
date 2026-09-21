@@ -25,63 +25,94 @@ ensure_dependencies(step = "part-6.1-clustering-multiple-resolutions.R")
 #       what selects `integrated_final` / `reduction_final` out of
 #       `methods_list`.
 
+
+# --- WHAT CLUSTERING ACTUALLY DOES (FOR BEGINNERS) ---
 # ****************************************************************************#
-# --- WHY THIS STEP EXISTS ---
+#   Integration corrected for batch effects so cells now sit in a shared
+#   space based on biology rather than which sample they came from.
+#   Clustering is the next question: within that shared space, which cells
+#   look enough alike to call them the same population? Seurat answers this
+#   with graph-based community detection (the Louvain algorithm), in three
+#   conceptual steps:
+#
+#     1. Build a k-nearest-neighbour (KNN) graph: each cell connects to its
+#        ~20 most similar neighbours, measured in the INTEGRATED PCA space
+#        (not raw gene expression, which would still carry batch effects).
+#     2. Convert to a shared-nearest-neighbour (SNN) graph: connections are
+#        reweighted by how many neighbours two cells have in common — cells
+#        with lots of shared neighbours get a stronger edge between them,
+#        which makes the resulting clusters more robust to noise.
+#     3. Detect communities on that graph: the algorithm looks for groups of
+#        cells that are much more densely connected to each other than to
+#        the rest of the graph and calls each group a cluster.
+#
+#   `FindNeighbors()`, called back when each integration method was run
+#   (Section 4), already built that SNN graph. `FindClusters()` below does
+#   only step 3 — it partitions the existing graph, it does not rebuild it —
+#   which is why sweeping five resolutions here is cheap.
+
+
+# --- WHY WE SWEEP RESOLUTIONS INSTEAD OF PICKING ONE ---
 # ****************************************************************************#
-#   Every integration method was clustered at a single, arbitrary resolution
-#   (0.6 — Seurat's standard default) purely so each method could carry a
-#   comparable `seurat_clusters` column for the mixing and preservation
-#   metrics. But that resolution is a decision, not a fact: Louvain modularity
-#   clustering's `resolution` parameter directly controls how coarsely or
-#   finely the shared-nearest-neighbour (SNN) graph is partitioned
-#   (higher → more, smaller communities; lower → fewer, coarser ones). No
-#   single value is "correct" for every dataset, so before committing to one
-#   partitioning we sweep a range and record what the data actually looks like
-#   at each granularity.
+#   The `resolution` argument to `FindClusters()` controls how easily the
+#   algorithm splits cells into separate communities: higher resolution =
+#   more, smaller clusters; lower resolution = fewer, broader ones. Every
+#   integration method so far used a single fixed resolution (0.6) purely so
+#   the five methods could be compared on equal footing in Section 5 — that
+#   value was never chosen for what this dataset's biology actually needs.
 #
-#   THE RESOLUTION / GRANULARITY TRADE-OFF:
-#     - Low resolutions (~0.4): broad cell-type families (T cells, B cells,
-#       monocytes) — a useful overview, but genuinely distinct types can be
-#       lumped together.
-#     - Mid resolutions (~0.6–0.8): the typical working range — separated
-#       cell types plus coarse subtypes, stable run-to-run.
-#     - High resolutions (~1.0–1.2): fine-grained cell states and rare
-#       populations — useful, but be alert to over-splitting a single true
-#       cell type into artificial fragments.
-#   The point of the sweep is not to pick "the" right resolution here — it is
-#   to generate, in one pass, the cluster assignments future steps need (UMAP
-#   grids, silhouette-based optimal-resolution selection, quality checks)
-#   without re-running clustering repeatedly.
+#   ROUGH RULES OF THUMB (more cells generally supports a finer resolution
+#   without over-splitting):
+#     - ~3,000 cells   → resolution 0.4-0.6
+#     - ~10,000 cells  → resolution 0.6-0.8
+#     - ~50,000 cells  → resolution 0.8-1.2
+#     - >100,000 cells → resolution 1.0-1.5
 #
-#   NOTE ON `seurat_clusters`: `FindClusters()` overwrites the object's active
-#   `seurat_clusters` column on every run, so after this step it reflects only
-#   the LAST resolution (1.2). Downstream steps must therefore read the
-#   explicit `clusters_res_*` columns written below, never `seurat_clusters`.
+#   Our dataset sits at ~72,000 cells — in between the 50k and 100k+ rows
+#   above — so rather than guess a single value from the table, we sweep the
+#   whole 0.4-1.2 range and keep every result. The right resolution to
+#   actually use gets chosen later, once we can see what each one produces
+#   (guide §7.5-7.6) — not decided blind here.
+#
+#   A COMMON MISCONCEPTION TO AVOID: it's tempting to tune the resolution
+#   until the cluster count matches the number of cell types you expect
+#   (e.g. "I know there are 8 PBMC cell types, so I want 8 clusters"). This
+#   doesn't work, because cell types exist at multiple levels at once — "T
+#   cells" might be 1 cluster at low resolution, but split into CD4+/CD8+ at
+#   medium resolution, and further into naive/memory/effector subtypes at
+#   high resolution. Cell states (activated vs resting, cell-cycle phase,
+#   etc.) add further splits on top of that. None of these are "wrong" —
+#   getting 12-15 clusters out of 8 expected cell types is normal and often
+#   correct once subtypes are accounted for. There is no resolution that
+#   uniquely reproduces "the" cell types; the right choice depends on how
+#   fine-grained an answer your analysis actually needs.
 
 
 # --- 1. Define the Resolution Sweep ---
 # ****************************************************************************#
-#   Five evenly-spaced values spanning the coarse-to-fine working range
-#   (guide §7.4). Resolution sits in log-like space, so 0.4 → 1.2 crosses the
-#   typical low/mid/high boundaries of the granularity trade-off above.
+#   Five evenly-spaced values spanning the low/medium/high ranges described
+#   above (guide §7.2, §7.4), matched to our ~72,000-cell dataset.
 resolutions <- c(0.4, 0.6, 0.8, 1.0, 1.2)
 
 
 # --- 2. Cluster at Each Resolution ---
 # ****************************************************************************#
-#   Re-partitions the SAME SNN graph built during integration (Step 3.3A /
-#   4.2A-D) — `FindClusters()` consumes an existing graph, it never recomputes
-#   nearest neighbours, so sweeping five resolutions is cheap.
+#   Each pass through the loop re-partitions the SAME SNN graph at a
+#   different resolution — no neighbours are recomputed, so this is fast
+#   even though it runs five times.
 #
-#   COLUMN NAMING: `FindClusters()` stores each run under Seurat's internal
-#   `RNA_snn_res.<res>` label. Rather than renaming all metadata columns with a
-#   trailing `colnames()`/`gsub()` pass (fragile: it assumes the
-#   `RNA_snn_res.` prefix and rewrites every column name), we store each
-#   partition immediately under a stable, reader-friendly `clusters_res_<res>`
-#   alias via `AddMetaData()`. Downstream code can then reference the columns
-#   directly instead of reconstructing names from string prefixes. The count
-#   is read back from the object's idents (which `FindClusters()` sets to the
-#   latest partition), not from a string-reconstructed column name.
+#   COLUMN NAMING: `FindClusters()` stores each run's cluster assignment
+#   under Seurat's internal name "RNA_snn_res.<res>", and also overwrites the
+#   object's "active" cluster identity (`Idents()`) with whichever run just
+#   finished. Instead of leaving cluster labels under that internal name, we
+#   immediately copy each run's result into its own clearly-named column
+#   ("clusters_res_<res>") via `AddMetaData()`. That way all five results
+#   survive side by side, and downstream steps can read
+#   `integrated_final$clusters_res_0.8`, say, directly and unambiguously.
+#
+#   NOTE: because `Idents()` only ever holds the LAST resolution run (1.2),
+#   downstream steps must read the explicit `clusters_res_*` columns below —
+#   never `integrated_final$seurat_clusters` — to get a specific resolution.
 for (res in resolutions) {
     integrated_final <- FindClusters(
         integrated_final,
@@ -108,27 +139,27 @@ cat("(one column per resolution; seurat_clusters now reflects res = 1.2 only)\n"
 # ****************************************************************************#
 # WHERE WE STARTED:
 #   Step 5.3B committed the pipeline to one integrated object
-#   (`integrated_final`), but the object carried only a single clustering from
-#   a fixed, arbitrary resolution (0.6) that downstream steps would have
-#   silently inherited.
+#   (`integrated_final`), but the object carried only a single clustering
+#   from a fixed, arbitrary resolution (0.6) that downstream steps would
+#   have silently inherited without ever being examined against our actual
+#   ~72,000-cell dataset.
 #
 # WHAT WE HAVE ACCOMPLISHED:
-#   We re-partitioned `integrated_final`'s SNN graph at five resolutions
-#   (0.4, 0.6, 0.8, 1.0, 1.2), printing the community count each resolution
-#   recovers and storing every partition under an explicit, stable
-#   `clusters_res_<res>` metadata column. The multi-resolution landscape now
-#   lives in one object, ready to be examined without re-running clustering.
+#   Without touching cell type labels or biology yet, we re-partitioned
+#   `integrated_final`'s existing SNN graph at five resolutions (0.4, 0.6,
+#   0.8, 1.0, 1.2), printing the community count each one recovers and
+#   storing every partition under its own explicit `clusters_res_<res>`
+#   metadata column. The multi-resolution landscape now lives in one
+#   object, ready to be examined — and remember, a "right" number of
+#   clusters doesn't exist in isolation; it depends on which resolution's
+#   output actually holds up biologically.
 #
-# WHERE WE ARE HEADING (VISUALIZE → SELECT → SAVE):
-#   The guide continues with three steps built directly on these columns:
-#   (1) visualize each resolution's UMAP colored by its `clusters_res_*`
-#   assignment to judge coarse-vs-fine structure side by side (guide §7.5,
-#   "STEP 16"); (2) compute a silhouette score per resolution — on a
-#   subsample, in the integrated embedding — to objectively select the
-#   optimal resolution that balances well-separated, interpretable clusters
-#   (guide §7.6, "STEP 17"); and (3) assess cluster quality/stability, then
-#   save the final integrated-and-clustered object (guide §7.7–7.8, §8).
-#   From there the annotated, clustered data feeds cell-type annotation and
-#   within-cell-type differential expression between Healthy and
-#   Periodontitis_Post_Treatment.
+# WHERE WE ARE HEADING (NEXT: VISUALIZING MULTI-RESOLUTION CLUSTERING):
+#   Five columns of cluster labels aren't yet something you can evaluate by
+#   eye — a resolution that looks reasonable as a raw number (e.g. "18
+#   clusters") could still be splitting one real cell type into
+#   near-duplicate sub-clusters, or merging two distinct ones together. The
+#   next step renders each resolution's clusters as its own UMAP panel so
+#   the five options can be visually compared side by side (guide §7.5),
+#   before any decision is made about which resolution to carry forward.
 # ****************************************************************************#
