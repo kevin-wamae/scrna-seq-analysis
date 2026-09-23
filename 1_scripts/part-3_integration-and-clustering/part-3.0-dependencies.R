@@ -28,20 +28,45 @@
 
 # --- LOCATE THIS FOLDER ---
 # ****************************************************************************#
-#   When sourced via `source()`, the caller's frame carries the sourced
-#   file's path in `ofile`. Use that to resolve sibling scripts without
-#   hardcoding a path. Falls back to the working directory if that frame is
-#   unavailable (e.g. the helper is run directly).
-DEP_FRAME <- tryCatch(sys.frame(1), error = function(e) NULL)
-DEP_DIR <- if (
-    !is.null(DEP_FRAME) &&
-    exists("ofile", envir = DEP_FRAME, inherits = FALSE) &&
-    is.character(DEP_FRAME$ofile)
-) {
-    normalizePath(dirname(DEP_FRAME$ofile))
-} else {
-    normalizePath(getwd())
-}
+#   The folder containing the pipeline scripts. When this file is sourced at
+#   top level, the caller's frame carries the sourced file's path in `ofile`,
+#   so sibling scripts can be resolved without hardcoding a path. That frame
+#   trick is unreliable in a NESTED source — e.g. when `ensure_dependencies()`
+#   sources a prerequisite script whose own top-of-file block re-sources this
+#   manager from inside a function, `sys.frame(1)` no longer carries `ofile`
+#   and the naive fallback wrongly resolves to the working directory (the repo
+#   root) — so every candidate below is validated against the files it must
+#   actually contain before being accepted.
+DEP_DIR <- local({
+    dep_dir_ok <- function(d) {
+        !is.null(d) && length(d) == 1L && !is.na(d) && nzchar(d) &&
+            file.exists(file.path(d, "part-3.0-dependencies.R")) &&
+            file.exists(file.path(d, "part-3.1-load-libraries-and-configuration.R"))
+    }
+    frame_ofile <- tryCatch(sys.frame(1)$ofile, error = function(e) NULL)
+    cand <- if (
+        is.character(frame_ofile) && length(frame_ofile) == 1L && nzchar(frame_ofile)
+    ) {
+        normalizePath(dirname(frame_ofile), mustWork = FALSE)
+    } else {
+        NA_character_
+    }
+    if (dep_dir_ok(cand)) return(cand)
+    # Fall back to the documented convention: the working directory is the
+    # repo root, so the scripts live at the fixed relative location below.
+    fallback <- normalizePath(
+        file.path(getwd(), "1_scripts", "part-3_integration-and-clustering"),
+        mustWork = FALSE
+    )
+    if (dep_dir_ok(fallback)) return(fallback)
+    # The caller may already be running from inside the scripts folder.
+    wd <- normalizePath(getwd(), mustWork = FALSE)
+    if (dep_dir_ok(wd)) return(wd)
+    stop(
+        "part-3.0-dependencies.R: could not locate the pipeline script folder.\n",
+        "Run with the repository root (or the part-3 folder) as the working directory."
+    )
+})
 
 
 # --- PER-SCRIPT DEPENDENCY TABLE ---
