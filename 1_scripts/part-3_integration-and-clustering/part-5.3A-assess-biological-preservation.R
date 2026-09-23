@@ -13,12 +13,13 @@
 #   • part-5.2B-integration-comparison-quantitatively.R — supplies
 #     `methods_list` and `mixing_results`, which this step extends with a
 #     `condition_separation` column.
-#   If `mixing_results` is already in the environment, this block does
-#   nothing; otherwise it offers to source the prerequisites (interactive) or
-#   stops with a clear message (non-interactive/batch).
-if (!exists("ensure_dependencies", inherits = TRUE)) {
-    source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
-}
+#   The dependency manager is always re-sourced here (base-R only, cheap) so
+#   the latest DEP_TABLE is loaded on every run; ensure_dependencies() does
+#   nothing if `mixing_results` is already in the environment, otherwise it
+#   offers to source the prerequisites (interactive) or stops with a clear
+#   message (non-interactive/batch). When everything is already satisfied, an
+#   interactive session is asked whether to re-source fresh or proceed as-is.
+source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
 ensure_dependencies(step = "part-5.3A-assess-biological-preservation.R")
 
 # NOTE: Requires Step 5.1 (load-seurat-object-checkpoints) and Step 5.2B

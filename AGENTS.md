@@ -118,7 +118,14 @@ SeuratWrappers), each guarded by `if (!requireNamespace(...))`.
 `DEP_TABLE` maps each step → `requires` + `sentinel` objects;
 `ensure_dependencies(step = "<filename>")` at the top of each script skips if
 sentinel objects exist, otherwise offers to source prerequisites (interactive)
-or errors with the missing list (batch). **When adding a new script**: add one
+or errors with the missing list (batch). Every script **unconditionally
+re-sources** the manager at the top (base-R only, cheap), so edits to
+`DEP_TABLE` are picked up on every run without restarting the session or
+clearing stale objects. When all prerequisites are already satisfied, a
+top-level interactive run is asked whether to re-source them fresh (re-runs
+slow steps) or proceed as-is (default); batch and nested auto-sourcing runs
+skip silently (as do steps with no prerequisites at all).
+**When adding a new script**: add one
 row to `DEP_TABLE` (see "HOW TO ADD A NEW STEP" in that file) AND call
 `ensure_dependencies()` at the top — both, not one. `part-6.1` follows this
 (requires `part-3.1` + `part-5.3B`, sentinels `integrated_final` /

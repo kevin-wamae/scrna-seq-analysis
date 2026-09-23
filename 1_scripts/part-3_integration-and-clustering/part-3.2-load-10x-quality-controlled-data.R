@@ -9,12 +9,13 @@
 #   • part-3.1-load-libraries-and-configuration.R — supplies RUN_ID,
 #     CHECKPOINT_FORMAT, LOG_STEP, and the output directory variables used
 #     below.
-#   If those are already in the environment, this block does nothing;
-#   otherwise it offers to source them (interactive) or stops with a clear
-#   message (non-interactive/batch).
-if (!exists("ensure_dependencies", inherits = TRUE)) {
-    source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
-}
+#   The dependency manager is always re-sourced here (base-R only, cheap) so
+#   the latest DEP_TABLE is loaded on every run; ensure_dependencies() does
+#   nothing if those are already in the environment, otherwise it offers to
+#   source them (interactive) or stops with a clear message
+#   (non-interactive/batch). When everything is already satisfied, an
+#   interactive session is asked whether to re-source fresh or proceed as-is.
+source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
 ensure_dependencies(step = "part-3.2-load-10x-quality-controlled-data.R")
 
 

@@ -10,12 +10,14 @@
 #     five checkpointed objects below.
 #   Note: the checkpoints themselves must already exist on disk (written by
 #   Steps 3.3A and 4.2A-D). This script loads them — it does not re-run those
-#   heavy computations. If the config objects are already in the environment,
-#   this block does nothing; otherwise it offers to source them (interactive)
-#   or stops with a clear message (non-interactive/batch).
-if (!exists("ensure_dependencies", inherits = TRUE)) {
-    source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
-}
+#   heavy computations. The dependency manager is always re-sourced here
+#   (base-R only, cheap) so the latest DEP_TABLE is loaded on every run;
+#   ensure_dependencies() does nothing if the config objects are already in
+#   the environment, otherwise it offers to source them (interactive) or
+#   stops with a clear message (non-interactive/batch). When everything is
+#   already satisfied, an interactive session is asked whether to re-source
+#   fresh or proceed as-is.
+source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
 ensure_dependencies(step = "part-5.1-load-seurat-object-checkpoints.R")
 
 

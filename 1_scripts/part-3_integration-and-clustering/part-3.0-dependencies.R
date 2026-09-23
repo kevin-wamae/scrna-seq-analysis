@@ -10,10 +10,14 @@
 #     run before it, and the objects those scripts are expected to leave in
 #     the session (its "sentinel" objects).
 #   - `ensure_dependencies()` checks whether those sentinels already exist.
-#       * All present  -> prints a skip message and does nothing.
 #       * Some missing -> prints the exact list that needs to run, then
 #         (interactively) asks whether to source them now, or (in a
 #         non-interactive/batch run) stops with a clear error listing them.
+#       * All present  -> in a non-interactive or nested (auto-sourcing) run,
+#         proceeds with the current session's objects silently. In a
+#         top-level interactive session it instead asks whether to re-source
+#         the prerequisites fresh (default: no — proceed as-is). Re-sourcing
+#         guarantees a fresh state but re-runs any slow steps.
 #
 #   BASE-R ONLY: no packages are loaded here, so this can run before Step
 #   3.1's `library()` calls. Sourcing does not change the working directory,
@@ -255,8 +259,8 @@ dep_resolve <- function(step) {
 # Call this at the top of each pipeline script, e.g.:
 #   ensure_dependencies(step = "part-5.3B-select-best-integration-method.R")
 #
-# Returns invisible(TRUE) if prerequisites were sourced, invisible(FALSE) if
-# they were already present (or the user declined to run them).
+# Returns invisible(TRUE) if prerequisites were (re)sourced, invisible(FALSE)
+# if they were already present and kept as-is (or the user declined to act).
 ensure_dependencies <- function(step = NULL) {
     if (is.null(step) || !nzchar(step)) {
         stop("ensure_dependencies: 'step' must be the current script's filename.")
@@ -272,55 +276,81 @@ ensure_dependencies <- function(step = NULL) {
     need <- to_check[missing]
 
     if (length(need) == 0L) {
+        # --- ALL PREREQUISITES ALREADY SATISFIED ---
+        # Silent fast path for batch, nested auto-sourcing runs, and steps
+        # that have no prerequisites at all (e.g. part-3.0-install-packages,
+        # where there is nothing to re-source). A top-level interactive run
+        # with an actual prerequisite chain offers the choice between a
+        # guaranteed-fresh state (re-source the whole chain, re-running slow
+        # steps) and keeping the current session's objects (default).
+        if (!interactive() || isTRUE(getOption("dep_auto_source")) ||
+                length(to_check) == 0L) {
+            cat(sprintf(
+                "\n[DEP] %s: all prerequisites already satisfied — proceeding with current session objects.\n",
+                step
+            ))
+            return(invisible(FALSE))
+        }
+        ans <- readline(
+            "\n[DEP] All prerequisites already satisfied.\n     Re-source them fresh? (re-runs any slow steps) [y/N]: "
+        )
+        if (!(tolower(trimws(ans)) %in% c("y", "yes"))) {
+            cat(sprintf(
+                "\n[DEP] %s: proceeding with current session objects (declined fresh re-source).\n",
+                step
+            ))
+            return(invisible(FALSE))
+        }
+        to_source <- to_check
+        cat("[DEP] Re-sourcing satisfied prerequisites fresh...\n")
+
+    } else {
+        # --- SOME PREREQUISITES MISSING ---
+        need_names <- basename(need)
         cat(sprintf(
-            "\n[DEP] %s: all prerequisites already available in this session — nothing to run.\n",
+            "\n[DEP] %s requires these prerequisite script(s) not yet run in this session:\n",
             step
         ))
-        return(invisible(FALSE))
-    }
+        for (n in need_names) cat("   - ", n, "\n", sep = "")
 
-    need_names <- basename(need)
-    cat(sprintf(
-        "\n[DEP] %s requires these prerequisite script(s) not yet run in this session:\n",
-        step
-    ))
-    for (n in need_names) cat("   - ", n, "\n", sep = "")
-
-    run <- if (isTRUE(getOption("dep_auto_source"))) {
-        TRUE                                     # already mid auto-resolution
-    } else if (interactive()) {
-        ans <- readline("  Run them now? [y/N]: ")
-        tolower(trimws(ans)) %in% c("y", "yes")
-    } else {
-        FALSE
-    }
-
-    if (run) {
-        cat("[DEP] Sourcing prerequisite scripts in order...\n")
-        old <- getOption("dep_auto_source")
-        options(dep_auto_source = TRUE)          # suppress nested prompts
-        on.exit(options(dep_auto_source = old), add = TRUE)
-        for (s in need) {
-            p <- file.path(DEP_DIR, s)
-            if (!file.exists(p)) {
-                stop("Prerequisite script not found: ", p)
-            }
-            cat("  → ", basename(s), "\n", sep = "")
-            source(p, local = FALSE, echo = FALSE)
+        run <- if (isTRUE(getOption("dep_auto_source"))) {
+            TRUE                                     # already mid auto-resolution
+        } else if (interactive()) {
+            ans <- readline("  Run them now? [y/N]: ")
+            tolower(trimws(ans)) %in% c("y", "yes")
+        } else {
+            FALSE
         }
-        return(invisible(TRUE))
+
+        if (run) {
+            to_source <- need
+            cat("[DEP] Sourcing prerequisite scripts in order...\n")
+        } else if (!interactive()) {
+            stop(sprintf(
+                "Missing prerequisite(s) for %s in a non-interactive session: %s.\nRun them first — see the PREREQUISITES note at the top of this script.",
+                step, paste(need_names, collapse = ", ")
+            ))
+        } else {
+            cat(sprintf(
+                "\n[DEP] Declined to run prerequisites for %s — continuing (may error if the required objects are absent).\n",
+                step
+            ))
+            return(invisible(FALSE))
+        }
     }
 
-    if (!interactive()) {
-        stop(sprintf(
-            "Missing prerequisite(s) for %s in a non-interactive session: %s.\nRun them first — see the PREREQUISITES note at the top of this script.",
-            step, paste(need_names, collapse = ", ")
-        ))
+    # Shared source loop (used by both the missing-prereqs and fresh re-source
+    # paths). `dep_auto_source` suppresses nested prompts while sourcing.
+    old <- getOption("dep_auto_source")
+    options(dep_auto_source = TRUE)          # suppress nested prompts
+    on.exit(options(dep_auto_source = old), add = TRUE)
+    for (s in to_source) {
+        p <- file.path(DEP_DIR, s)
+        if (!file.exists(p)) {
+            stop("Prerequisite script not found: ", p)
+        }
+        cat("  → ", basename(s), "\n", sep = "")
+        source(p, local = FALSE, echo = FALSE)
     }
-
-    cat(sprintf(
-        "\n[DEP] Declined to run prerequisites for %s — continuing (may error if the required objects are absent).\n",
-        step
-    ))
-    invisible(FALSE)
+    invisible(TRUE)
 }

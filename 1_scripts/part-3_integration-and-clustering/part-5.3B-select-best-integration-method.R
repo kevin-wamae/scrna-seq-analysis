@@ -14,13 +14,14 @@
 #   • part-5.3A-assess-biological-preservation.R — adds the
 #     `condition_separation` column to `mixing_results`, which the ranking
 #     below prints alongside each method's mixing score.
-#   If `mixing_results` (with `condition_separation`) is already in the
-#   environment, this block does nothing; otherwise it offers to source the
-#   prerequisites (interactive) or stops with a clear message
-#   (non-interactive/batch).
-if (!exists("ensure_dependencies", inherits = TRUE)) {
-    source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
-}
+#   The dependency manager is always re-sourced here (base-R only, cheap) so
+#   the latest DEP_TABLE is loaded on every run; ensure_dependencies() does
+#   nothing if `mixing_results` (with `condition_separation`) is already in
+#   the environment, otherwise it offers to source the prerequisites
+#   (interactive) or stops with a clear message (non-interactive/batch). When
+#   everything is already satisfied, an interactive session is asked whether
+#   to re-source fresh or proceed as-is.
+source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
 ensure_dependencies(step = "part-5.3B-select-best-integration-method.R")
 
 # NOTE: Requires Steps 5.1, 5.2B, and 5.3A to have already run in this
