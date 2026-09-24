@@ -106,7 +106,10 @@ DEP_TABLE <- list(
     ),
     "part-3.1-load-libraries-and-configuration.R" = list(
         requires = c("part-3.0-install-packages.R"),
-        sentinel = c("LOG_STEP", "DATA_CHECKPOINT_DIR")
+        sentinel = c(
+            "LOG_STEP", "DATA_CHECKPOINT_DIR",
+            "sample_metadata", "sample_colors", "condition_colors"
+        )
     ),
     "part-3.2-load-10x-quality-controlled-data.R" = list(
         requires = c("part-3.1-load-libraries-and-configuration.R"),

@@ -6,10 +6,11 @@
 # --- PREREQUISITES (scripts that must run before this one in this session) ---
 # ****************************************************************************#
 #   • part-3.0-install-packages.R — packages for library() calls.
-#   • part-3.1-load-libraries-and-configuration.R — RUN_ID, LOG_STEP, and
-#     output-directory variables.
+#   • part-3.1-load-libraries-and-configuration.R — RUN_ID, LOG_STEP,
+#     output-directory variables, and the shared `sample_colors` /
+#     `condition_colors` palettes.
 #   • part-3.2-load-10x-quality-controlled-data.R — supplies `sample_metadata`
-#     (used to colour by sample/condition).
+#     and the sample objects merged in Step 3.3A.
 #   • part-3.3A-merge-naive.R — supplies `merged_naive`, the object plotted
 #     here.
 #   The dependency manager is always re-sourced here (base-R only, cheap) so
@@ -43,39 +44,20 @@ ensure_dependencies(step = "part-3.3B-visualize-batch-effects.R")
 #   for comparison, not as proof of anything on its own.
 
 
-# --- 1. Define Color Palettes ---
+# --- 1. Color Palettes (Shared) ---
 # ****************************************************************************#
-#   Two separate palettes, matched to two separate questions:
-#     - `sample_colors`: one distinct color per patient/sample (8 total).
-#       Used in p1 to check whether any single sample clusters apart from
-#       the rest (batch effect) versus blending into shared clusters
-#       (no batch effect).
-#     - `condition_colors`: one color per biological condition (Healthy vs
-#       Post-Treatment). Used in p2/p4 to check whether disease state drives
-#       real separation — the signal we actually want to see once batch
-#       effects are corrected — independent of which specific patient a
-#       cell came from.
+#   `sample_colors` and `condition_colors` are defined once in Step 3.1 and
+#   reused here, so this "before" figure and every later figure colour the
+#   same sample/condition identically:
+#     - `sample_colors`: one distinct color per sample (8 total), used in p1
+#       to check whether any single sample clusters apart from the rest
+#       (batch effect) versus blending into shared clusters (no batch effect).
+#     - `condition_colors`: one color per biological condition, used in p2/p4
+#       to check whether disease state drives real separation — the signal we
+#       actually want to see once batch effects are corrected.
 #
-#   8 samples need 8 distinct, visible colors (Set1-style categorical
-#   palette), manually assigned rather than auto-generated so colors stay
-#   stable across re-runs regardless of factor level ordering.
-sample_colors <- c(
-  "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", # Healthy 1-4: Red, Blue, Green, Purple
-  "#FF7F00", "#A65628", "#F781BF", "#999999"  # Post_Patient 1-4: Orange, Brown, Pink, Gray
-)
-names(sample_colors) <- sample_metadata$sample_id
-
-# Colors for conditions, set to match the colors used in the source paper for
-# the different conditions. If you want to change the colors, change them
-# here. NOTE: the names below must exactly match the values that appear in
-# `merged_naive$condition` (check with `unique(merged_naive$condition)`) — a
-# mismatched name doesn't error, DimPlot just silently falls back to its
-# default palette for that condition, which would quietly break the
-# paper-matched coloring without any warning.
-condition_colors <- c(
-  "Healthy" = "#2E86AB",                     # Blue
-  "Periodontitis_Post_Treatment" = "#F18F01" # Orange
-)
+#   Panel p3 colours by cluster and keeps the ggplot defaults, so no palette
+#   is needed for it.
 
 
 # --- 2. Build Diagnostic UMAP Panels ---

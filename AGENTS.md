@@ -120,6 +120,9 @@ depend on the loader rather than the heavy producers.
 
 **7. Metadata** — always read `2_input/sample-metadata/sample_names.tsv` rather
 than hardcoding sample lists; that file is authoritative (single source of truth).
+It is read once in `part-3.1`, which defines `sample_metadata` plus the shared
+`sample_colors` / `condition_colors` palettes every plotting step reuses — do
+not re-read the TSV or redefine those colours locally.
 
 **8. Packages** — never add `install.packages()` for a package pixi manages.
 Only `part-2.0` / `part-3.0` install non-conda packages (colorout,
@@ -206,6 +209,10 @@ File types follow a strict, readable scheme (lowercase snake_case everywhere):
   modernize-vs-improve distinction and the house-style checklist; load it when
   asked to "modernize"/align a pipeline script to conventions without changing
   its analysis.
+- Shared cohort metadata + colour palettes centralized in `part-3.1`
+  (`sample_metadata`, `sample_colors`, `condition_colors`); `3.2`, `3.3B`,
+  `5.2A`, and `6.4` now consume them instead of re-reading the TSV or
+  redefining palettes locally.
 - Part 6 checkpointing: `part-6.2B` now writes `06_clustered_final` (the final
   clustered object) + `07_clustering_metrics` (`reduction_final`,
   `resolutions`, `optimal_resolution`, `resolution_comparison`) to

@@ -6,8 +6,9 @@
 # --- PREREQUISITES (scripts that must run before this one in this session) ---
 # ****************************************************************************#
 #   • part-3.0-install-packages.R — packages for library() calls.
-#   • part-3.1-load-libraries-and-configuration.R — RUN_ID, LOG_STEP, and
-#     output-directory variables.
+#   • part-3.1-load-libraries-and-configuration.R — RUN_ID, LOG_STEP,
+#     output-directory variables, and the shared `sample_colors` /
+#     `condition_colors` palettes.
 #   • part-5.1-load-seurat-object-checkpoints.R — supplies the five objects
 #     plotted here: `merged_naive`, `integrated_cca`, `integrated_rpca`,
 #     `integrated_harmony`, `integrated_fastmnn`.
@@ -20,14 +21,10 @@
 source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
 ensure_dependencies(step = "part-5.2A-integration-comparison-visual.R")
 
-# TODO: Define color palettes in 3.1 to standardize colors across all plots
-#       across all plots to ensure that the same sample/condition is always
-#       the same color throughout the analysis pipeline.
 # NOTE: Requires Step 5.1 (load-seurat-object-checkpoints) to have already
 #       run in this session — that step is what populates `merged_naive`,
 #       `integrated_cca`, `integrated_rpca`, `integrated_harmony`, and
 #       `integrated_fastmnn`.
-# TODO: Add a note that this script needs to be run after Step 5.1
 
 # ****************************************************************************#
 # --- WHY THIS STEP EXISTS ---
@@ -50,61 +47,24 @@ ensure_dependencies(step = "part-5.2A-integration-comparison-visual.R")
 #   this comparison; these UMAPs are the visual companion piece.
 
 
-# --- 1. Reload Sample Metadata (Single Source of Truth) ---
+# --- 1. Shared Metadata & Color Palettes ---
 # ****************************************************************************#
-#   Re-read from the same `sample_names.tsv` used throughout the pipeline
-#   rather than trusting condition/patient labels already baked into the
-#   checkpointed objects. This script may run as a standalone job well after
-#   previous steps finished, so metadata is reloaded explicitly instead of
-#   assumed to still be in memory.
-sample_metadata <- read.delim("2_input/sample-metadata/sample_names.tsv",
-    stringsAsFactors = FALSE
-) %>%
-    select(sample_id, condition, patient_id) %>%
-    filter(condition != "Periodontitis_Pre_Treatment")
-
-cat("Sample metadata loaded:\n")
-cat("  Samples:   ", nrow(sample_metadata), "\n")
-cat("  Conditions:", paste(unique(sample_metadata$condition), collapse = ", "), "\n\n")
+#   `sample_metadata`, `sample_colors`, and `condition_colors` are defined
+#   once in Step 3.1 and reused here. Because this step can run as a
+#   standalone job well after 3.1, they arrive via `ensure_dependencies()`
+#   like every other shared object — nothing is re-read from the TSV or
+#   re-defined locally, so this comparison colours each sample and condition
+#   exactly as the naive "before" figure (Step 3.3B) and every later figure.
 
 
-# --- 2. Define Color Palettes ---
-# ****************************************************************************#
-#   Matches the same two palettes used in Step 3.3B, for visual continuity
-#   between the "before" (naive merge) figure and these "after" (integrated)
-#   figures.
-#     - `sample_colors`: one distinct color per patient/sample (8 total),
-#       used to check whether each method actually mixes samples together.
-#     - `condition_colors`: one color per biological condition, used to
-#       check whether real disease-state separation survives correction.
-#
-#   NAMING CAVEAT (see Step 3.3B): the names below must exactly match the
-#   values in `merged_naive$condition` / `integrated_*$condition` — check
-#   with `unique(sample_metadata$condition)`. A mismatched name doesn't
-#   error, DimPlot just silently falls back to its default palette for that
-#   condition.
-sample_colors <- c(
-    # Healthy
-    "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3",
-    # Post_Patient
-    "#FF7F00", "#A65628", "#F781BF", "#999999"
-)
-names(sample_colors) <- sample_metadata$sample_id
-
-condition_colors <- c(
-    "Healthy" = "#2E86AB",                      # Blue
-    "Periodontitis_Post_Treatment" = "#F18F01"  # Orange
-)
-
-
-# --- 3. Helper: Standardized Comparison UMAP Builder ---
+# --- 2. Helper: Standardized Comparison UMAP Builder ---
 # ****************************************************************************#
 #   Wraps `DimPlot()` with the consistent styling (title, legend size) we
 #   want across all ten panels (5 methods × 2 grouping variables), so each
 #   individual plot call below only has to specify what differs: which
 #   object, which reduction, which grouping variable, which title.
 make_comparison_plot <- function(seurat_obj, reduction_name, title,
-                                group_by = "sample_id", colors = NULL) {
+                                 group_by = "sample_id", colors = NULL) {
     p <- DimPlot(seurat_obj,
         reduction = reduction_name, group.by = group_by, pt.size = 0.05
     ) +
@@ -124,7 +84,7 @@ make_comparison_plot <- function(seurat_obj, reduction_name, title,
 }
 
 
-# --- 4. Build Comparison Panels: Colored by Sample (Mixing Check) ---
+# --- 3. Build Comparison Panels: Colored by Sample (Mixing Check) ---
 # ****************************************************************************#
 #   Five panels, one per method, all colored the same way (by sample_id).
 #   A method that successfully corrected batch effects should show samples
@@ -167,7 +127,7 @@ cat("   Look for samples interleaving within shared clusters (good) vs\n")
 cat("   forming isolated single-sample islands (batch effect persists)\n\n")
 
 
-# --- 5. Build Comparison Panels: Colored by Condition (Biology Check) ---
+# --- 4. Build Comparison Panels: Colored by Condition (Biology Check) ---
 # ****************************************************************************#
 #   The counterpart check to Section 4 above: correcting batch effects is
 #   only a win if real biological signal (Healthy vs Post-Treatment) is

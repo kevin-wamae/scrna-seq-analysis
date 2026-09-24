@@ -7,8 +7,9 @@
 # ****************************************************************************#
 #   • part-3.0-install-packages.R — packages for library() calls.
 #   • part-3.1-load-libraries-and-configuration.R — supplies RUN_ID,
-#     CHECKPOINT_FORMAT, LOG_STEP, and the output directory variables used
-#     below.
+#     CHECKPOINT_FORMAT, LOG_STEP, the output directory variables used below,
+#     and `sample_metadata` (the cohort definition, kept there as the single
+#     source of truth).
 #   The dependency manager is always re-sourced here (base-R only, cheap) so
 #   the latest DEP_TABLE is loaded on every run; ensure_dependencies() does
 #   nothing if those are already in the environment, otherwise it offers to
@@ -19,30 +20,14 @@ source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
 ensure_dependencies(step = "part-3.2-load-10x-quality-controlled-data.R")
 
 
-# --- LOAD SAMPLE METADATA (SINGLE SOURCE OF TRUTH) ---
+# --- SAMPLE METADATA (SINGLE SOURCE OF TRUTH) ---
 # ****************************************************************************#
-# Rather than re-declaring sample identities in a separate hardcoded
-# data.frame (which drifts out of sync the moment Part 2's TSV changes), we
-# read from the exact same `sample_names.tsv` that Step 2 of Part 2 uses to
-# select each sample's Cell Ranger input and QC thresholds. This guarantees
-# the condition/patient labels attached here always match what was actually
-# used to generate the `.rds` files we're about to load.
-#
-# The TSV contains all 12 cohort samples (Healthy, Periodontitis_Pre, and
-# Periodontitis_Post). For this integration run we deliberately exclude the
-# Pre-Treatment timepoint, keeping only Healthy vs Post-Treatment — adjust
-# the `filter()` below if your comparison changes.
-
-# Read the sample metadata
-sample_metadata <- read.delim("2_input/sample-metadata/sample_names.tsv",
-    stringsAsFactors = FALSE) %>%
-    select(sample_id, condition, patient_id) %>%
-    filter(condition != "Periodontitis_Pre_Treatment")
-
-# Sanity check that the metadata looks right
-cat("Sample metadata loaded:\n")
-cat("  Samples:   ", nrow(sample_metadata), "\n")
-cat("  Conditions:", paste(unique(sample_metadata$condition), collapse = ", "), "\n\n")
+# `sample_metadata` — the 8-sample Healthy vs Periodontitis_Post_Treatment
+# cohort, excluding the Pre-Treatment timepoint — is read once from
+# `sample_names.tsv` in Step 3.1 and reused here. Keeping the read in 3.1 (the
+# only step every script depends on) is what stops this script and the other
+# consumers of sample identity from drifting out of sync. If the comparison
+# changes, adjust the `filter()` in Step 3.1, not here.
 
 
 # --- LOCATE PART 2 OUTPUT ---
@@ -137,10 +122,9 @@ cat("Common genes retained:", length(common_genes), "\n")
 #   structure between them.
 #
 # WHAT WE HAVE ACCOMPLISHED:
-#   In this step, we re-established `sample_names.tsv` as the single source
-#   of truth for sample identity, filtered our cohort down to the
-#   Healthy vs Post-Treatment comparison, and loaded the corresponding
-#   `.rds` files in parallel via `future`/`furrr`. We then resolved the one
+#   Using the cohort definition (`sample_metadata`) fixed in Step 3.1, we
+#   loaded the corresponding `.rds` files for the Healthy vs Post-Treatment
+#   comparison in parallel via `future`/`furrr`. We then resolved the one
 #   structural obstacle standing between "a folder of separate objects" and
 #   "an integratable dataset": each sample's independently-filtered gene set.
 #   By intersecting all sample gene lists into a single common feature space,
