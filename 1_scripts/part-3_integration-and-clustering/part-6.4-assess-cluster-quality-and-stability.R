@@ -142,10 +142,10 @@ sample_dist_long <- reshape2::melt(sample_dist_data, id.vars = "cluster",
 p_sample_dist <- ggplot(sample_dist_long, aes(x = cluster, y = percentage, fill = sample)) +
     geom_bar(stat = "identity", position = "stack") +
     labs(title = "Sample Distribution Across Clusters",
-         subtitle = "Check for sample-dominated clusters (poor integration)",
-         x = "Cluster", y = "Percentage of Cells") +
+        subtitle = "Check for sample-dominated clusters (poor integration)",
+        x = "Cluster", y = "Percentage of Cells") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
-          legend.position = "right")
+        legend.position = "right")
 
 ggsave(
     file.path(PLOTS_CLUSTERING_DIR, "07_sample_distribution_clusters.png"),
@@ -187,7 +187,7 @@ cat("→ Saved:", file.path(METADATA_OUT_DIR, "cluster_condition_composition.csv
 condition_dist_data <- as.data.frame.matrix(condition_dist_pct)
 condition_dist_data$cluster <- rownames(condition_dist_data)
 condition_dist_long <- reshape2::melt(condition_dist_data, id.vars = "cluster",
-                                      variable.name = "condition", value.name = "percentage")
+                                    variable.name = "condition", value.name = "percentage")
 
 condition_colors <- c(
     "Healthy" = "#2E86AB",                     # Blue
@@ -197,8 +197,8 @@ condition_colors <- c(
 p_condition_dist <- ggplot(condition_dist_long, aes(x = cluster, y = percentage, fill = condition)) +
     geom_bar(stat = "identity", position = "dodge") +
     labs(title = "Condition Distribution Across Clusters",
-         subtitle = "Check if biological conditions are preserved",
-         x = "Cluster", y = "Percentage of Cells") +
+        subtitle = "Check if biological conditions are preserved",
+        x = "Cluster", y = "Percentage of Cells") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     scale_fill_manual(values = condition_colors)
 
