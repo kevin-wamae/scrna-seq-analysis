@@ -109,7 +109,14 @@ of serializing multi-GB globals to workers.
 **6. Checkpoints** — persist heavy intermediates (merged/integrated objects) to
 `DATA_CHECKPOINT_DIR` honoring `CHECKPOINT_FORMAT` (`qs2::qs_save`/`qs_read`,
 `nthreads = N_WORKERS`, or `saveRDS`/`readRDS`). Loader pattern lives in
-part-5.1 via a named `CHECKPOINT_NAMES` vector.
+part-5.1 via a named `CHECKPOINT_NAMES` vector, and in part-6.3 for the Part 6
+objects. **When adding or modernizing a step, always decide whether it needs a
+checkpoint, and state that decision in the script's commentary.** Add one when
+the step is expensive (minutes+) or produces a heavy, reusable intermediate
+that downstream steps would otherwise recompute; skip it for cheap steps and
+say why. Any step that writes a checkpoint must have a matching loader
+(mirroring part-5.1/part-6.3), with both registered in `DEP_TABLE` so consumers
+depend on the loader rather than the heavy producers.
 
 **7. Metadata** — always read `2_input/sample-metadata/sample_names.tsv` rather
 than hardcoding sample lists; that file is authoritative (single source of truth).

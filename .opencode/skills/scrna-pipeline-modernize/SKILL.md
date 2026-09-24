@@ -66,9 +66,19 @@ the list.
      expect as a table, persisting it as a CSV is a *delivery* change, not an
      analysis change — but confirm with the user before adding it.
 
-6. **SUMMARY & PIPELINE MILESTONE TRANSITION** — end the script with the
+6. **Checkpoint decision** — for every step, decide whether it should write a
+   checkpoint and state that decision in the script's commentary. Persist one
+   when the step is expensive (minutes+) or produces a heavy, reusable
+   intermediate that downstream steps would otherwise recompute; skip it for
+   cheap steps and say why. A writer must honour `CHECKPOINT_FORMAT` (qs2 with
+   `nthreads = N_WORKERS`, or rds), wrap the save in `LOG_STEP`, and log
+   `cat("✓ Checkpoint written:", <path>, "\n")`. Any new checkpoint needs a
+   matching loader step (mirror `part-5.1` / `part-6.3`), with both registered
+   in `DEP_TABLE` so consumers depend on the loader, not the heavy producer.
+
+7. **SUMMARY & PIPELINE MILESTONE TRANSITION** — end the script with the
    standard block: WHERE WE STARTED / WHAT WE HAVE ACCOMPLISHED / WHERE WE
-   ARE HEADING, mirroring the target script's neighbour (e.g. `part-6.3`) and
+   ARE HEADING, mirroring the target script's neighbour (e.g. `part-6.4`) and
    the guide narrative. Start the `# ***` footer line like the header.
 
 ## Do-not rules (violations break repo conventions)
