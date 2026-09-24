@@ -34,7 +34,7 @@ the list.
    - `# --- PREREQUISITES (scripts that must run before this one in this
      session) ---` with a `# ****` divider, bullet-listing each prerequisite,
    - the standard "dependency manager is always re-sourced here…" paragraph
-     (copy verbatim from a neighbouring script, e.g. `part-6.3`),
+     (copy verbatim from a neighbouring script, e.g. `part-6.4`),
    - `source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")`
    - `ensure_dependencies(step = "<this script's exact filename>")`
    - `# NOTE: Requires Step X …` when it needs objects from a specific

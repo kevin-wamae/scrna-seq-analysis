@@ -1,5 +1,5 @@
 # ****************************************************************************#
-# STEP 6.3: Evaluate optimal clustering resolution
+# STEP 6.2B: Evaluate optimal clustering resolution
 # ****************************************************************************#
 
 
@@ -21,14 +21,14 @@
 #   (non-interactive/batch). When everything is already satisfied, an
 #   interactive session is asked whether to re-source fresh or proceed as-is.
 source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
-ensure_dependencies(step = "part-6.3-evaluate-optimal-clustering-resolution.R")
+ensure_dependencies(step = "part-6.2B-evaluate-optimal-clustering-resolution.R")
 
 # NOTE: Requires Steps 5.3B and 6.1 to have already run in this session.
 
 
 # --- THE SILHOUETTE SCORE METRIC (FOR BEGINNERS) ---
 # ****************************************************************************#
-#   Step 6.2 gave us a visual first impression of the five resolutions —
+#   Step 6.2A gave us a visual first impression of the five resolutions —
 #   useful, but "this one looks about right" isn't something you can report
 #   or compare objectively. The silhouette score is the quantitative
 #   counterpart, used here to assess cluster quality at each resolution.
@@ -58,7 +58,7 @@ ensure_dependencies(step = "part-6.3-evaluate-optimal-clustering-resolution.R")
 #   for PBMC data like ours, 8-15 clusters is typical once major cell types
 #   and their subtypes are both accounted for; a "winning" resolution that
 #   falls far outside that range is worth treating as a flag to double-check
-#   against Step 6.2's UMAP grid, not a reason to override the score
+#   against Step 6.2A's UMAP grid, not a reason to override the score
 #   automatically.
 #
 #   OUR STRATEGY, STEP BY STEP:
@@ -69,7 +69,7 @@ ensure_dependencies(step = "part-6.3-evaluate-optimal-clustering-resolution.R")
 #        interpretable cluster number — not just whichever score happens
 #        to be numerically highest.
 #     4. Visually validate that the chosen resolution makes biological
-#        sense — this is what Step 6.2's comparison grid was for, and is
+#        sense — this is what Step 6.2A's comparison grid was for, and is
 #        worth revisiting once a candidate resolution is picked here.
 #
 #   WHY THE INTEGRATED EMBEDDING, NOT THE UMAP: silhouette scores are
@@ -194,7 +194,7 @@ cat("→ Saved:", file.path(METADATA_OUT_DIR, "resolution_comparison_metrics.csv
 #   that range is worth a second look before trusting it outright.
 #
 #   Strategy step 4 — visually validating that the chosen resolution makes
-#   biological sense — is not re-done here; it is exactly what Step 6.2's
+#   biological sense — is not re-done here; it is exactly what Step 6.2A's
 #   comparison grid already gives you. Revisit that figure for whichever
 #   resolution is recommended below before treating it as final.
 #
@@ -208,17 +208,68 @@ optimal_resolution <- resolution_comparison$resolution[optimal_idx]
 cat("\nRecommended resolution:", optimal_resolution,
     "(", resolution_comparison$n_clusters[optimal_idx], "clusters )\n")
 cat("→ Sanity-check this against 06_multi_resolution_clustering.png",
-    "(Step 6.2) before treating it as final.\n\n")
+    "(Step 6.2A) before treating it as final.\n\n")
 
 integrated_final$seurat_clusters <- integrated_final@meta.data[[paste0("clusters_res_", optimal_resolution)]]
 Idents(integrated_final) <- "seurat_clusters"
+
+
+# --- 6. Checkpoint the Final Clustered Object & Selection ---
+# ****************************************************************************#
+#   Reaching this point is the most expensive segment of the pipeline after
+#   integration: Steps 5.3B-6.1 require reloading the integration
+#   checkpoints, recomputing mixing metrics, and re-clustering at five
+#   resolutions, and the silhouette loop above is the slowest single
+#   computation in Part 6. Everything downstream needs — the clustered
+#   object, the chosen resolution, its supporting objects — is now in this
+#   session, so we persist two checkpoints honoring `CHECKPOINT_FORMAT`
+#   (set once in Step 3.1: 1 = qs2, 2 = rds):
+#
+#     1. `06_clustered_final` — `integrated_final` exactly as it stands
+#        right now: every `clusters_res_*` column from Step 6.1 AND
+#        `seurat_clusters` set to the chosen `optimal_resolution`.
+#     2. `07_clustering_metrics` — the small supporting objects needed to
+#        reconstruct the session: `reduction_final`, `resolutions`,
+#        `optimal_resolution`, and `resolution_comparison`. Kept as a
+#        separate, light file so loading back from disk never requires
+#        re-reading a multi-GB object just to recover a few scalars.
+#
+#   Step 6.3 exists to load both back; with them on disk this script only
+#   ever needs to run once.
+clustering_metrics <- list(
+    reduction_final       = reduction_final,
+    resolutions           = resolutions,
+    optimal_resolution    = optimal_resolution,
+    resolution_comparison = resolution_comparison
+)
+
+if (CHECKPOINT_FORMAT == 1) {
+    CLUSTERED_CP  <- file.path(DATA_CHECKPOINT_DIR, "06_clustered_final.qs2")
+    METRICS_CP    <- file.path(DATA_CHECKPOINT_DIR, "07_clustering_metrics.qs2")
+    LOG_STEP("Saving clustered object + metrics checkpoints (qs2)...", {
+        qs2::qs_save(integrated_final, CLUSTERED_CP, nthreads = N_WORKERS)
+        qs2::qs_save(clustering_metrics, METRICS_CP, nthreads = N_WORKERS)
+    })
+} else if (CHECKPOINT_FORMAT == 2) {
+    CLUSTERED_CP  <- file.path(DATA_CHECKPOINT_DIR, "06_clustered_final.rds")
+    METRICS_CP    <- file.path(DATA_CHECKPOINT_DIR, "07_clustering_metrics.rds")
+    LOG_STEP("Saving clustered object + metrics checkpoints (rds, single-threaded)...", {
+        saveRDS(integrated_final, CLUSTERED_CP)
+        saveRDS(clustering_metrics, METRICS_CP)
+    })
+} else {
+    stop("CHECKPOINT_FORMAT must be 1 (qs2) or 2 (rds)")
+}
+
+cat("✓ Checkpoint written:", CLUSTERED_CP, "\n")
+cat("✓ Checkpoint written:", METRICS_CP, "\n")
 
 
 # ****************************************************************************#
 # SUMMARY & PIPELINE MILESTONE TRANSITION
 # ****************************************************************************#
 # WHERE WE STARTED:
-#   Step 6.2 gave us a visual, side-by-side comparison of five resolutions —
+#   Step 6.2A gave us a visual, side-by-side comparison of five resolutions —
 #   persuasive as a first look, but not a number that could be reported or
 #   used to make a decision on its own.
 #
@@ -229,14 +280,17 @@ Idents(integrated_final) <- "seurat_clusters"
 #   resolution_comparison_metrics.csv, and set `integrated_final`'s active
 #   clustering (`seurat_clusters` / `Idents()`) to `optimal_resolution` —
 #   the top-scoring candidate, flagged here for a visual sanity check
-#   against Step 6.2's comparison grid rather than accepted blind.
+#   against Step 6.2A's comparison grid rather than accepted blind. We then
+#   checkpointed the final clustered object (`06_clustered_final`) together
+#   with its supporting metrics (`07_clustering_metrics`) to
+#   `DATA_CHECKPOINT_DIR`, so this expensive step only ever runs once.
 #
-# WHERE WE ARE HEADING (NEXT: CLUSTER QUALITY ASSESSMENT):
-#   A high silhouette score confirms clusters are well-separated in the
-#   integrated embedding, but says nothing about whether those clusters are
-#   still batch-driven or contain unreasonably small, likely-artifactual
-#   groups. The next step checks cluster sizes and each cluster's sample
-#   composition at `optimal_resolution`, flagging anything that still looks
-#   sample-dominated before this clustering is treated as final (guide
-#   §7.7).
+# WHERE WE ARE HEADING (NEXT: STEP 6.3 LOADER, THEN CLUSTER QUALITY):
+#   Step 6.3 loads the two checkpoints back into memory in seconds,
+#   letting every downstream step (cluster quality assessment, the final
+#   integrated visualization, and the eventual save in guide §7.8/8) pick
+#   up exactly this state without re-running Steps 5.3B-6.2B. From there
+#   Step 6.4 checks cluster sizes and each cluster's sample composition at
+#   `optimal_resolution`, flagging anything that still looks sample-
+#   dominated before this clustering is treated as final (guide §7.7).
 # ****************************************************************************#

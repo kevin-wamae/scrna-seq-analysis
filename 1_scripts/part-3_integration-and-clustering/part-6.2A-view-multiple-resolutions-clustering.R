@@ -1,5 +1,5 @@
 # ****************************************************************************#
-# STEP 6.2: Visualize clustering results across resolutions
+# STEP 6.2A: Visualize clustering results across resolutions
 # ****************************************************************************#
 
 
@@ -18,7 +18,7 @@
 #   (non-interactive/batch). When everything is already satisfied, an
 #   interactive session is asked whether to re-source fresh or proceed as-is.
 source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
-ensure_dependencies(step = "part-6.2-view-multiple-resolutions-clustering.R")
+ensure_dependencies(step = "part-6.2A-view-multiple-resolutions-clustering.R")
 
 # NOTE: Requires Step 6.1 to have already run in this session — that step is
 #       what writes the `clusters_res_*` columns plotted below.

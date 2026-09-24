@@ -10,9 +10,10 @@
 #     checks build on).
 #   • part-3.1-load-libraries-and-configuration.R — RUN_ID, LOG_STEP, and the
 #     output-directory variables.
-#   • part-6.3-evaluate-optimal-clustering-resolution.R — sets
-#     `integrated_final$seurat_clusters` to the chosen `optimal_resolution`
-#     partition, which is exactly the clustering quality-checked below.
+#   • part-6.3-load-clustering-checkpoints.R — loads `integrated_final` with
+#     `seurat_clusters` already committed to the chosen `optimal_resolution`
+#     partition (from the Step 6.2B checkpoint), which is exactly the
+#     clustering quality-checked below.
 #   The dependency manager is always re-sourced here (base-R only, cheap) so
 #   the latest DEP_TABLE is loaded on every run; ensure_dependencies() does
 #   nothing if those objects are already in the environment, otherwise it
@@ -22,13 +23,14 @@
 source("1_scripts/part-3_integration-and-clustering/part-3.0-dependencies.R")
 ensure_dependencies(step = "part-6.4-assess-cluster-quality-and-stability.R")
 
-# NOTE: Requires Step 6.3 to have already run in this session — that step is
-#       what commits `seurat_clusters` to the selected resolution.
+# NOTE: Requires Steps 6.1 -> 6.2B to have already run once (so the clustering
+#       checkpoints exist) and Step 6.3 to have loaded them in this session —
+#       that is what commits `seurat_clusters` to the selected resolution.
 
 # --- WHY THIS STEP EXISTS ---
 # ****************************************************************************#
-#   Step 6.1 swept five resolutions, Step 6.2 showed them on UMAP, and Step
-#   6.3 picked one by silhouette score. A good silhouette score means the
+#   Step 6.1 swept five resolutions, Step 6.2A showed them on UMAP, and Step
+#   6.2B picked one by silhouette score. A good silhouette score means the
 #   clusters are well-separated in the integrated embedding — but it says
 #   nothing about whether those clusters are biologically sensible or merely
 #   artifacts of the clustering itself. This step performs two sanity checks
@@ -45,13 +47,13 @@ ensure_dependencies(step = "part-6.4-assess-cluster-quality-and-stability.R")
 #        kept Healthy vs Periodontitis_Post_Treatment specifically to see it).
 #
 #   Neither check is pass/fail. They produce ranges with interpretation, and
-#   the final call is always made by eye against the Step 6.2 UMAP grid.
+#   the final call is always made by eye against the Step 6.2A UMAP grid.
 
 
 # --- 1. Cluster Sizes & Small-Cluster Detection ---
 # ****************************************************************************#
 #   The chosen partition lives in `integrated_final$seurat_clusters` (set by
-#   Step 6.3 from `clusters_res_<optimal_resolution>`). First pass: how many
+#   Step 6.2B from `clusters_res_<optimal_resolution>`). First pass: how many
 #   cells does each cluster contain, and does any cluster fall below 1% of
 #   the dataset?
 #
@@ -81,7 +83,7 @@ if (length(small_clusters) > 0) {
 
 # Persist the size summary (cluster sizes as percentages + the flag) so the
 # chosen partition's cell counts sit in the metadata ledger alongside the
-# resolution-comparison table written by Step 6.3.
+# resolution-comparison table written by Step 6.2B.
 cluster_size_summary <- data.frame(
     cluster   = names(cluster_sizes),
     n_cells   = as.integer(cluster_sizes),
@@ -211,7 +213,7 @@ cat("→ Saved:", file.path(PLOTS_CLUSTERING_DIR, "08_condition_distribution_clu
 # SUMMARY & PIPELINE MILESTONE TRANSITION
 # ****************************************************************************#
 # WHERE WE STARTED:
-#   Step 6.3 picked the optimal resolution on silhouette score and wrote that
+#   Step 6.2B picked the optimal resolution on silhouette score and wrote that
 #   partition into `integrated_final$seurat_clusters` — well-separated in the
 #   integrated embedding, but never examined as compositions of cells.
 #
