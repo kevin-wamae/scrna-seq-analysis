@@ -181,6 +181,16 @@ File types follow a strict, readable scheme (lowercase snake_case everywhere):
   `AddMetaData` (no colname gsub). Kept lean in scope (no added outputs/plots)
   but fully commented, with an interpretation guide and a SUMMARY & PIPELINE
   MILESTONE TRANSITION matching the 3_guide narrative.
+- `part-6.4` modernized (house-style only): wired into `DEP_TABLE` +
+  `ensure_dependencies()` block, "STEP 18" banner aligned to "STEP 6.4",
+  `Post_Treatment`→`Periodontitis_Post_Treatment` palette fix, and the two
+  composition/size summaries now persist as CSVs
+  (`cluster_size_summary.csv`, `cluster_sample_composition.csv`,
+  `cluster_condition_composition.csv`). Same analyses and plots as before.
+- Skill `.opencode/skills/scrna-pipeline-modernize/` encodes the
+  modernize-vs-improve distinction and the house-style checklist; load it when
+  asked to "modernize"/align a pipeline script to conventions without changing
+  its analysis.
 - Pending: downstream cell-type annotation (Part 4 scaffolded in pixi.toml,
   commented out).
 - After each work session, update this section so the next session resumes.

@@ -236,6 +236,13 @@ DEP_TABLE <- list(
             "part-6.1-clustering-multiple-resolutions.R"
         ),
         sentinel = c("resolution_comparison", "optimal_resolution")
+    ),
+    "part-6.4-assess-cluster-quality-and-stability.R" = list(
+        requires = c(
+            "part-3.1-load-libraries-and-configuration.R",
+            "part-6.3-evaluate-optimal-clustering-resolution.R"
+        ),
+        sentinel = c("cluster_sizes")
     )
 )
 
