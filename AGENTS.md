@@ -21,8 +21,12 @@ and ends with a milestone-transition summary.
 - `1_scripts/part-3_integration-and-clustering/` — R: dependency manager +
   install → merge naive baseline → 4 integration methods (CCA, RPCA, Harmony,
   FastMNN) → compare visually + quantitatively → pick best (`part-5.3B`) →
-  cluster at multiple resolutions (`part-6.1`). Scripts: `part-3.0-install-packages.R`,
-  `part-3.0-dependencies.R`, `part-3.1`…`part-5.3B`, `part-6.1-clustering-multiple-resolutions.R`.
+  cluster at multiple resolutions (`part-6.1`) → visualize + evaluate
+  resolutions (`part-6.2A`, `part-6.2B`, checkpointed) → load clustering
+  checkpoints (`part-6.3`) → cluster quality (`part-6.4`). Scripts:
+  `part-3.0-install-packages.R`, `part-3.0-dependencies.R`,
+  `part-3.1`…`part-5.3B`, `part-6.1`, `part-6.2A`, `part-6.2B`,
+  `part-6.3`, `part-6.4`.
 - `2_input/` — `cellranger-matrix-counts/`, and `sample-metadata/sample_names.tsv`
   (the **single source of truth** for sample_id/condition/patient_id/QC thresholds).
 - `3_output/<RUN_ID>/` — `qc_and_filtering/` (plots, filtered_data, metrics) and
@@ -105,7 +109,14 @@ of serializing multi-GB globals to workers.
 **6. Checkpoints** — persist heavy intermediates (merged/integrated objects) to
 `DATA_CHECKPOINT_DIR` honoring `CHECKPOINT_FORMAT` (`qs2::qs_save`/`qs_read`,
 `nthreads = N_WORKERS`, or `saveRDS`/`readRDS`). Loader pattern lives in
-part-5.1 via a named `CHECKPOINT_NAMES` vector.
+part-5.1 via a named `CHECKPOINT_NAMES` vector, and in part-6.3 for the Part 6
+objects. **When adding or modernizing a step, always decide whether it needs a
+checkpoint, and state that decision in the script's commentary.** Add one when
+the step is expensive (minutes+) or produces a heavy, reusable intermediate
+that downstream steps would otherwise recompute; skip it for cheap steps and
+say why. Any step that writes a checkpoint must have a matching loader
+(mirroring part-5.1/part-6.3), with both registered in `DEP_TABLE` so consumers
+depend on the loader rather than the heavy producers.
 
 **7. Metadata** — always read `2_input/sample-metadata/sample_names.tsv` rather
 than hardcoding sample lists; that file is authoritative (single source of truth).
@@ -159,10 +170,14 @@ File types follow a strict, readable scheme (lowercase snake_case everywhere):
   into `metadata/` (part-3) or `metrics/` (part-2).
 - **Seurat objects / checkpoints** — `NN_<slug>.<ext>` with the same 2-digit
   run-order prefix: `01_merged_naive`, `02_integrated_cca`,
-  `03_integrated_rpca`, `04_integrated_harmony`, `05_integrated_fastmnn`.
-  Extension is `.qs2` or `.rds` depending on `CHECKPOINT_FORMAT`; slugs are
-  mapped by the named `CHECKPOINT_NAMES` vector in part-5.1. Part-2 clean
-  sample objects are `<sample_id>_qc_filtered.rds` in `filtered_data/<sample_id>/`.
+  `03_integrated_rpca`, `04_integrated_harmony`, `05_integrated_fastmnn`,
+  `06_clustered_final` (final clustered object from part-6.3),
+  `07_clustering_metrics` (small list: reduction_final, resolutions,
+  optimal_resolution, resolution_comparison).
+  Extension is `.qs2` or `.rds` depending on `CHECKPOINT_FORMAT`; Part-5
+  slugs are mapped by the named `CHECKPOINT_NAMES` vector in part-5.1, and
+  the Part-6 pair (06/07) is read by part-6.3. Part-2 clean sample objects
+  are `<sample_id>_qc_filtered.rds` in `filtered_data/<sample_id>/`.
 - After every save, log the path with `cat("→ Saved:", <path>, "\n")`.
 
 ## Verification
@@ -191,6 +206,15 @@ File types follow a strict, readable scheme (lowercase snake_case everywhere):
   modernize-vs-improve distinction and the house-style checklist; load it when
   asked to "modernize"/align a pipeline script to conventions without changing
   its analysis.
+- Part 6 checkpointing: `part-6.2B` now writes `06_clustered_final` (the final
+  clustered object) + `07_clustering_metrics` (`reduction_final`,
+  `resolutions`, `optimal_resolution`, `resolution_comparison`) to
+  `DATA_CHECKPOINT_DIR`; new `part-6.3-load-clustering-checkpoints.R` loads
+  them back (mirrors `part-5.1`). `part-6.4` now requires the `6.3` loader
+  instead of `6.1`/`6.2B`, so downstream sessions skip the heavy
+  `5.3B`−`6.2B` chain once the checkpoints exist. `part-6.2A` still requires
+  `6.1` (it is upstream of the checkpoints). First build still runs the
+  full chain; `6.2B` itself does not self-short-circuit.
 - Pending: downstream cell-type annotation (Part 4 scaffolded in pixi.toml,
   commented out).
 - After each work session, update this section so the next session resumes.

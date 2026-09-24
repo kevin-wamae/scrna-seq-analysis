@@ -222,14 +222,14 @@ DEP_TABLE <- list(
         ),
         sentinel = c("integrated_final", "reduction_final")
     ),
-    "part-6.2-view-multiple-resolutions-clustering.R" = list(
+    "part-6.2A-view-multiple-resolutions-clustering.R" = list(
         requires = c(
             "part-3.1-load-libraries-and-configuration.R",
             "part-6.1-clustering-multiple-resolutions.R"
         ),
         sentinel = c("integrated_final", "resolutions")
     ),
-    "part-6.3-evaluate-optimal-clustering-resolution.R" = list(
+    "part-6.2B-evaluate-optimal-clustering-resolution.R" = list(
         requires = c(
             "part-3.1-load-libraries-and-configuration.R",
             "part-5.3B-select-best-integration-method.R",
@@ -237,10 +237,17 @@ DEP_TABLE <- list(
         ),
         sentinel = c("resolution_comparison", "optimal_resolution")
     ),
+    "part-6.3-load-clustering-checkpoints.R" = list(
+        requires = c("part-3.1-load-libraries-and-configuration.R"),
+        sentinel = c(
+            "integrated_final", "reduction_final", "resolutions",
+            "optimal_resolution", "resolution_comparison"
+        )
+    ),
     "part-6.4-assess-cluster-quality-and-stability.R" = list(
         requires = c(
             "part-3.1-load-libraries-and-configuration.R",
-            "part-6.3-evaluate-optimal-clustering-resolution.R"
+            "part-6.3-load-clustering-checkpoints.R"
         ),
         sentinel = c("cluster_sizes")
     )
