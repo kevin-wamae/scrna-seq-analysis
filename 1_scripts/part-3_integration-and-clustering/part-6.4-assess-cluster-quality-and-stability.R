@@ -85,8 +85,8 @@ if (length(small_clusters) > 0) {
 # chosen partition's cell counts sit in the metadata ledger alongside the
 # resolution-comparison table written by Step 6.2B.
 cluster_size_summary <- data.frame(
-    cluster   = names(cluster_sizes),
-    n_cells   = as.integer(cluster_sizes),
+    cluster = names(cluster_sizes),
+    n_cells = as.integer(cluster_sizes),
     pct_cells = as.numeric(cluster_pct),
     small_cluster = as.vector(small_cluster_flag)
 )
@@ -134,18 +134,27 @@ cat("→ Saved:", file.path(METADATA_OUT_DIR, "cluster_sample_composition.csv"),
 #   glance: one bar per cluster, coloured by sample. A healthy mix looks like
 #   a stack with 8 roughly equal bands; a dominated cluster reads as one tall
 #   band swallowing its neighbours to the right of the "mixed" threshold.
+#   Colours come from the shared `sample_colors` defined in Step 3.1, so a
+#   given sample is the same colour here as in every earlier figure.
 sample_dist_data <- as.data.frame.matrix(sample_cluster_pct)
 sample_dist_data$cluster <- rownames(sample_dist_data)
-sample_dist_long <- reshape2::melt(sample_dist_data, id.vars = "cluster",
-                                    variable.name = "sample", value.name = "percentage")
+sample_dist_long <- reshape2::melt(sample_dist_data,
+    id.vars = "cluster",
+    variable.name = "sample", value.name = "percentage"
+)
 
 p_sample_dist <- ggplot(sample_dist_long, aes(x = cluster, y = percentage, fill = sample)) +
     geom_bar(stat = "identity", position = "stack") +
-    labs(title = "Sample Distribution Across Clusters",
+    labs(
+        title = "Sample Distribution Across Clusters",
         subtitle = "Check for sample-dominated clusters (poor integration)",
-        x = "Cluster", y = "Percentage of Cells") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "right")
+        x = "Cluster", y = "Percentage of Cells"
+    ) +
+    theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "right"
+    ) +
+    scale_fill_manual(values = sample_colors)
 
 ggsave(
     file.path(PLOTS_CLUSTERING_DIR, "07_sample_distribution_clusters.png"),
@@ -181,24 +190,26 @@ cat("→ Saved:", file.path(METADATA_OUT_DIR, "cluster_condition_composition.csv
 # --- 5. Visualize Condition Distribution ---
 # ****************************************************************************#
 #   Side-by-side (dodged) bars per cluster, coloured by condition with the
-#   shared palette used elsewhere in the pipeline (Step 3.3B). NOTE: the
-#   condition names must exactly match the values on the object, or the
-#   manual scale silently falls back to default colours.
+#   shared `condition_colors` defined in Step 3.1 (same palette as Steps 3.3B
+#   and 5.2A).
 condition_dist_data <- as.data.frame.matrix(condition_dist_pct)
 condition_dist_data$cluster <- rownames(condition_dist_data)
-condition_dist_long <- reshape2::melt(condition_dist_data, id.vars = "cluster",
-                                    variable.name = "condition", value.name = "percentage")
-
-condition_colors <- c(
-    "Healthy" = "#2E86AB",                     # Blue
-    "Periodontitis_Post_Treatment" = "#F18F01" # Orange
+condition_dist_long <- reshape2::melt(condition_dist_data,
+    id.vars = "cluster",
+    variable.name = "condition",
+    value.name = "percentage"
 )
 
-p_condition_dist <- ggplot(condition_dist_long, aes(x = cluster, y = percentage, fill = condition)) +
+p_condition_dist <- ggplot(
+    condition_dist_long,
+    aes(x = cluster, y = percentage, fill = condition)
+) +
     geom_bar(stat = "identity", position = "dodge") +
-    labs(title = "Condition Distribution Across Clusters",
+    labs(
+        title = "Condition Distribution Across Clusters",
         subtitle = "Check if biological conditions are preserved",
-        x = "Cluster", y = "Percentage of Cells") +
+        x = "Cluster", y = "Percentage of Cells"
+    ) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     scale_fill_manual(values = condition_colors)
 

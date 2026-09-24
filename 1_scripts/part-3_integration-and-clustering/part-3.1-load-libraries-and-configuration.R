@@ -270,6 +270,55 @@ cat("  • Metadata Ledger:", METADATA_OUT_DIR, "\n")
 cat("  • Checkpoint Vault:", DATA_CHECKPOINT_DIR, "\n\n")
 
 
+# --- COHORT METADATA & SHARED COLOUR PALETTES ---
+# ****************************************************************************#
+#   The cohort definition lives here, in the one step every script sources,
+#   so sample identities and the colours used to plot them are defined once
+#   and stay identical across every figure in the pipeline.
+#
+#   WHY HERE: `sample_names.tsv` is the single source of truth for sample
+#   identity (see AGENTS.md), and this step is the only one guaranteed to be
+#   in every downstream script's dependency closure (3.3B, 4.1, 5.2A, 6.4,
+#   ...). Defining the metadata and its palettes here means a plotting script
+#   never has to re-read the TSV or hand-pick colours, and never drifts out
+#   of sync with the others.
+#
+#   The TSV holds all 12 cohort samples (Healthy, Periodontitis_Pre, and
+#   Periodontitis_Post). This integration run excludes the Pre-Treatment
+#   timepoint, keeping Healthy vs Periodontitis_Post_Treatment; adjust the
+#   `filter()` below if the comparison changes.
+sample_metadata <- read.delim("2_input/sample-metadata/sample_names.tsv",
+    stringsAsFactors = FALSE) %>%
+    select(sample_id, condition, patient_id) %>%
+    filter(condition != "Periodontitis_Pre_Treatment")
+
+cat("Sample metadata loaded:\n")
+cat("  Samples:   ", nrow(sample_metadata), "\n")
+cat("  Conditions:", paste(unique(sample_metadata$condition), collapse = ", "), "\n\n")
+
+#   SHARED PALETTES — one named vector per grouping used across the pipeline:
+#     - `sample_colors`: one distinct colour per sample (8), used to check
+#       whether samples mix (batch correction) or separate.
+#     - `condition_colors`: one colour per biological condition, used to
+#       check the disease-state signal.
+#
+#   NAMING CAVEAT: `sample_colors` is named positionally from
+#   `sample_metadata$sample_id`, and `condition_colors` names must exactly
+#   match `unique(sample_metadata$condition)`. A mismatched name does not
+#   error — DimPlot/scale_*_manual silently fall back to a default palette —
+#   so keep these in step with the TSV.
+sample_colors <- c(
+    "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", # Healthy 1-4
+    "#FF7F00", "#A65628", "#F781BF", "#999999"  # Post-Treatment 1-4
+)
+names(sample_colors) <- sample_metadata$sample_id
+
+condition_colors <- c(
+    "Healthy" = "#2E86AB",                      # Blue
+    "Periodontitis_Post_Treatment" = "#F18F01"  # Orange
+)
+
+
 # --- PLOTTING DEFAULTS ---
 # ****************************************************************************#
 # Applies a consistent, publication-friendly theme across every plot

@@ -92,8 +92,10 @@ the list.
 - Keep existing package choices (e.g. `reshape2::melt` is loaded in
   `part-3.1` and used deliberately; don't swap it for tidyr).
 - Match the exact wording of the shared "dependency manager is always
-  re-sourced here…" paragraph and colours (e.g. condition palette in
-  `part-3.3B`) so scripts stay consistent.
+  re-sourced here…" paragraph so scripts stay consistent.
+- Don't re-read `sample_names.tsv` or redefine `sample_colors` /
+  `condition_colors`: `part-3.1` is the single source, defining
+  `sample_metadata` plus the shared palettes. Downstream steps reuse those.
 
 ## Verification
 
