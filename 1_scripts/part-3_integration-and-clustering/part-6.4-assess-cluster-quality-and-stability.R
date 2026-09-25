@@ -48,6 +48,21 @@ ensure_dependencies(step = "part-6.4-assess-cluster-quality-and-stability.R")
 #
 #   Neither check is pass/fail. They produce ranges with interpretation, and
 #   the final call is always made by eye against the Step 6.2A UMAP grid.
+#
+#   GUIDE §9.1 / §9.3 / §10.4 — WARNING SIGNS, NOT AUTOMATIC FAILURES:
+#   A small cluster can be a genuine rare population or an over-split fragment;
+#   its size alone cannot distinguish those explanations. Likewise, a
+#   sample-dominated cluster can indicate residual batch structure, but it may
+#   also reflect a real sample-specific population or a sample with unusual
+#   biology. A condition-enriched cluster is not a batch warning by itself:
+#   condition is the biological contrast this analysis is designed to preserve.
+#
+#   Interpret these flags together with the UMAPs, marker genes, QC history,
+#   and the known study design. The guide's examples such as <50 cells, <1% of
+#   cells, and >70% from one sample are useful prompts for review, not universal
+#   definitions of bad clusters. This script keeps the checks deliberately
+#   descriptive so that downstream biological annotation can resolve the
+#   rare-population-versus-artifact question.
 
 
 # --- 1. Cluster Sizes & Small-Cluster Detection ---

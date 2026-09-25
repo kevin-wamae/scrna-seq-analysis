@@ -58,6 +58,15 @@ ensure_dependencies(step = "part-6.6-save-clustered-and-integrated-data.R")
 #       Step 6.2B; a value far outside it is a prompt to revisit the resolution
 #       choice, not a failure of this save step.
 #
+#   GUIDE §§9-11 — WHAT THE SAVED SUMMARY MEANS:
+#   These fields document the analysis decision and preserve the evidence needed
+#   to revisit it. They do not certify that every cluster is a cell type or that
+#   treatment biology has been fully validated. Final interpretation still
+#   requires the resolution grid, sample/condition composition, marker-gene
+#   validation, and downstream within-cell-type comparisons. In particular,
+#   guide thresholds such as a preferred cluster-count range or a mixing-score
+#   reference are study-context prompts, not universal pass/fail rules.
+#
 #   CHECKPOINT DECISION: no additional checkpoint. The object written here is
 #   itself the preserved artifact, and Steps 6.2B/6.3 already carry the
 #   `06_clustered_final` / `07_clustering_metrics` checkpoints for resuming the

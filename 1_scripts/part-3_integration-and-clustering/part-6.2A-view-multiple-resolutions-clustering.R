@@ -39,6 +39,19 @@ ensure_dependencies(step = "part-6.2A-view-multiple-resolutions-clustering.R")
 #   visually inspect in one figure rather than five separate ones — and so
 #   the eventual choice of resolution (guide §7.6) is based on seeing the
 #   clusters, not just counting them.
+#
+#   GUIDE §9.1 / §9.2 / §10.3 — VISUAL REVIEW CHECKLIST:
+#   Read the five panels from low to high resolution and look for broad
+#   populations that remain recognisable while plausible subclusters emerge
+#   gradually. A stable boundary across neighbouring resolutions is more
+#   reassuring than a boundary that appears only at the highest setting.
+#   Diffuse clouds, abrupt fragmentation, or many tiny islands are reasons to
+#   inspect markers and cluster composition before accepting a fine partition.
+#
+#   The labels are visual aids, not cell-type annotations. A label can be
+#   placed away from a dense part of a cluster when the cluster is elongated,
+#   sparse, or distributed unevenly; cell membership is determined by the
+#   metadata column being plotted, not by the label's position on the UMAP.
 
 
 # --- 1. Build One UMAP Panel Per Resolution ---

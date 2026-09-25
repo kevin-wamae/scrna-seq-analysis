@@ -62,6 +62,27 @@ ensure_dependencies(step = "part-6.5-final-results-comprehensive-visualization.R
 #   `cluster_sample_composition.csv` / `cluster_condition_composition.csv`
 #   from Step 6.4.
 #
+#   GUIDE §9.1 / §11.2 — WHAT THIS FIGURE CAN AND CANNOT SHOW:
+#   Successful integration is suggested when samples mix within comparable
+#   cell populations, while known biological structure and condition-enriched
+#   populations remain visible. A mixed sample-colour pattern alone does not
+#   prove that treatment biology was preserved; that conclusion also requires
+#   condition-aware comparisons, marker genes, composition analysis, and later
+#   within-cell-type differential expression.
+#
+#   Conversely, condition separation on a UMAP is not automatically desirable
+#   or undesirable. Broad separation can reflect biology or residual batch
+#   structure, and broad mixing can reflect successful correction or excessive
+#   correction. Read this figure together with the integration comparison and
+#   cluster-quality outputs rather than using one visual pattern as a verdict.
+#
+#   LABEL-PLACEMENT CAVEAT: cluster labels are calculated from embedding
+#   coordinates and may sit away from the densest visible cells when a cluster
+#   is elongated, sparse, or unevenly distributed between condition panels.
+#   The plotted colour/group assignment—not the label location—defines cluster
+#   membership. Inspect the metadata and composition tables when a label looks
+#   visually displaced.
+#
 #   CHECKPOINT DECISION: none. This is a plotting-only step — its entire output
 #   is two PNGs, and it creates no heavy intermediate that a later step would
 #   otherwise recompute. Persisting a checkpoint here would add a file with no
