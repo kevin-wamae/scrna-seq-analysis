@@ -33,7 +33,7 @@ ensure_dependencies(step = "part-6.5-final-results-comprehensive-visualization.R
 #   Step 6.4 vetted the chosen partition numerically (cluster sizes, sample and
 #   condition composition). This step is the visual bookend to that work: a
 #   single figure presenting the final integrated-and-clustered object the way
-#   a reader first meets it (guide §7.8, STEP 19). Four panels, each answering
+#   a reader first meets it. Four panels, each answering
 #   a different question:
 #
 #     1. FINAL CLUSTERS (top left): what the chosen `optimal_resolution`
@@ -53,7 +53,7 @@ ensure_dependencies(step = "part-6.5-final-results-comprehensive-visualization.R
 #        faceted into one panel per condition, so a cluster appearing in only
 #        one condition is immediately visible.
 #
-#   INTERPRETATION (guide §9.1):
+#   INTERPRETATION:
 #     - Good integration : samples intermingle; condition signal present but
 #       not driving the global structure.
 #     - Red flags        : sample-shaped islands (under-integration), or a
@@ -62,7 +62,7 @@ ensure_dependencies(step = "part-6.5-final-results-comprehensive-visualization.R
 #   `cluster_sample_composition.csv` / `cluster_condition_composition.csv`
 #   from Step 6.4.
 #
-#   GUIDE §9.1 / §11.2 — WHAT THIS FIGURE CAN AND CANNOT SHOW:
+#   WHAT THIS FIGURE CAN AND CANNOT SHOW:
 #   Successful integration is suggested when samples mix within comparable
 #   cell populations, while known biological structure and condition-enriched
 #   populations remain visible. A mixed sample-colour pattern alone does not
@@ -200,6 +200,6 @@ cat("→ Saved:", file.path(PLOTS_CLUSTERING_DIR, "10_clusters_by_condition_spli
 #   Step 6.6 produces the actual Part 3 deliverable: it joins the assay layers
 #   for a portable object, saves it to `integrated_data/` (honouring
 #   CHECKPOINT_FORMAT), and writes the per-cell metadata and the one-row
-#   integration summary to `metadata/` (guide §8, STEP 20), so downstream
+#   integration summary to `metadata/`, so downstream
 #   cell-type annotation can start from a clean file.
 # ****************************************************************************#

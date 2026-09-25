@@ -34,10 +34,10 @@ and ends with a milestone-transition summary.
 - `3_guide/` — tutorial clippings from ngs101.com that the scripts' commentary
   is written against: `Part 1 - From FASTQ to Count Matrix.md`,
   `Part 2A/2B - Quality Control and Cell Filtering.md`,
-  `Part 3 - Integration and Clustering.md`. Comments cite them as
-  "guide §<section>" / "STEP <N>", and each script's SUMMARY & PIPELINE
-  MILESTONE TRANSITION mirrors the guide's narrative — keep new steps aligned
-  with it.
+  `Part 3 - Integration and Clustering.md`. Guide citations ("guide §<section>"
+  / "STEP <N>") have been removed from the Part 3 scripts for now, pending
+  finalisation of this resource; the surrounding explanatory comments were
+  kept. Re-add the citations once the guide is settled.
 - `logs/` — HPC job logs.
 
 ## Cohort & analysis design
@@ -198,7 +198,7 @@ File types follow a strict, readable scheme (lowercase snake_case everywhere):
   "STEP 15" banner aligned to "STEP 6.1", and `clusters_res_*` columns via
   `AddMetaData` (no colname gsub). Kept lean in scope (no added outputs/plots)
   but fully commented, with an interpretation guide and a SUMMARY & PIPELINE
-  MILESTONE TRANSITION matching the 3_guide narrative.
+  MILESTONE TRANSITION.
 - `part-6.4` modernized (house-style only): wired into `DEP_TABLE` +
   `ensure_dependencies()` block, "STEP 18" banner aligned to "STEP 6.4",
   `Post_Treatment`→`Periodontitis_Post_Treatment` palette fix, and the two
@@ -233,4 +233,9 @@ File types follow a strict, readable scheme (lowercase snake_case everywhere):
   and wraps the save in `LOG_STEP`; no new analysis, plots, or filenames.
 - Pending: downstream cell-type annotation (Part 4 scaffolded in pixi.toml,
   commented out).
+- Part 3 script commentary decoupled from the guide: all "guide §<section>" /
+  "STEP <N>" citations removed from
+  `1_scripts/part-3_integration-and-clustering/` (comment-only; no code
+  changed), to be re-added once the `3_guide/` resource is finalised. The
+  surrounding explanatory comments were kept.
 - After each work session, update this section so the next session resumes.
