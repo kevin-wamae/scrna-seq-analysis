@@ -222,6 +222,15 @@ File types follow a strict, readable scheme (lowercase snake_case everywhere):
   `5.3B`−`6.2B` chain once the checkpoints exist. `part-6.2A` still requires
   `6.1` (it is upstream of the checkpoints). First build still runs the
   full chain; `6.2B` itself does not self-short-circuit.
+- `part-6.5` and `part-6.6` modernized (house-style + consistency only): wired
+  into `DEP_TABLE` + `ensure_dependencies()`, banners `6.5`/`6.6` (was STEP
+  19/20), PREREQUISITES + WHY/section prose + SUMMARY transitions, saves logged
+  with `cat("→ Saved:")`, and `6.5`'s stale `best_method` TODO removed. Fixed
+  the underlying dependency bug: `part-5.3B`'s `ready()` now also requires
+  `best_method`, so `6.5`/`6.6` (which both use it) get 5.3B properly
+  re-sourced rather than silently skipped. `6.6` now honours
+  `CHECKPOINT_FORMAT` for the final object extension (`integrated_clustered_seurat.qs2`/`.rds`)
+  and wraps the save in `LOG_STEP`; no new analysis, plots, or filenames.
 - Pending: downstream cell-type annotation (Part 4 scaffolded in pixi.toml,
   commented out).
 - After each work session, update this section so the next session resumes.

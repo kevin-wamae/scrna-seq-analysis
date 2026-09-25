@@ -212,11 +212,12 @@ DEP_TABLE <- list(
             "part-5.2B-integration-comparison-quantitatively.R",
             "part-5.3A-assess-biological-preservation.R"
         ),
-        sentinel = character(),
+        sentinel = c("best_method"),
         ready = function()
             exists("methods_list",  envir = .GlobalEnv, inherits = FALSE) &&
             exists("mixing_results", envir = .GlobalEnv, inherits = FALSE) &&
-            "condition_separation" %in% names(mixing_results)
+            "condition_separation" %in% names(mixing_results) &&
+            exists("best_method", envir = .GlobalEnv, inherits = FALSE)
     ),
     "part-6.1-clustering-multiple-resolutions.R" = list(
         requires = c(
@@ -253,6 +254,22 @@ DEP_TABLE <- list(
             "part-6.3-load-clustering-checkpoints.R"
         ),
         sentinel = c("cluster_sizes")
+    ),
+    "part-6.5-final-results-comprehensive-visualization.R" = list(
+        requires = c(
+            "part-3.1-load-libraries-and-configuration.R",
+            "part-5.3B-select-best-integration-method.R",
+            "part-6.3-load-clustering-checkpoints.R"
+        ),
+        sentinel = c("p_final_integrated_clustered")
+    ),
+    "part-6.6-save-clustered-and-integrated-data.R" = list(
+        requires = c(
+            "part-3.1-load-libraries-and-configuration.R",
+            "part-5.3B-select-best-integration-method.R",
+            "part-6.3-load-clustering-checkpoints.R"
+        ),
+        sentinel = c("integration_summary")
     )
 )
 
