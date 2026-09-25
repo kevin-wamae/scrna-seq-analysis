@@ -72,8 +72,8 @@ ensure_dependencies(step = "part-6.1-clustering-multiple-resolutions.R")
 #   Our dataset sits at ~72,000 cells — in between the 50k and 100k+ rows
 #   above — so rather than guess a single value from the table, we sweep the
 #   whole 0.4-1.2 range and keep every result. The right resolution to
-#   actually use gets chosen later, once we can see what each one produces
-#   (guide §7.5-7.6) — not decided blind here.
+#   actually use gets chosen later, once we can see what each one produces —
+#   not decided blind here.
 #
 #   A COMMON MISCONCEPTION TO AVOID: it's tempting to tune the resolution
 #   until the cluster count matches the number of cell types you expect
@@ -87,12 +87,29 @@ ensure_dependencies(step = "part-6.1-clustering-multiple-resolutions.R")
 #   correct once subtypes are accounted for. There is no resolution that
 #   uniquely reproduces "the" cell types; the right choice depends on how
 #   fine-grained an answer your analysis actually needs.
+#
+#   HOW TO READ THE RESOLUTION SERIES:
+#   The low, medium, and high labels describe progressively finer views of the
+#   same integrated neighbourhood graph, not three competing truths. Lower
+#   resolutions are useful for broad populations; middle resolutions often
+#   expose common subtypes; higher resolutions may reveal cell states or split
+#   continuous transitions into smaller communities. The expected cluster-count
+#   ranges above are PBMC-oriented reference points, not acceptance
+#   criteria for this cohort. What matters here is whether structure appears
+#   gradually and remains biologically interpretable, rather than whether the
+#   count matches a preconceived list of cell types.
+#
+#   A useful visual question for Step 6.2A is whether a new high-resolution
+#   cluster is a coherent, marker-supported population or merely a thin slice
+#   of a neighbouring cloud. The code below deliberately preserves every
+#   resolution so that question can be answered later; this step does not
+#   declare any resolution biologically correct.
 
 
 # --- 1. Define the Resolution Sweep ---
 # ****************************************************************************#
 #   Five evenly-spaced values spanning the low/medium/high ranges described
-#   above (guide §7.2, §7.4), matched to our ~72,000-cell dataset.
+#   above, matched to our ~72,000-cell dataset.
 resolutions <- c(0.4, 0.6, 0.8, 1.0, 1.2)
 
 
@@ -161,6 +178,6 @@ cat("(one column per resolution; seurat_clusters now reflects res = 1.2 only)\n"
 #   clusters") could still be splitting one real cell type into
 #   near-duplicate sub-clusters, or merging two distinct ones together. The
 #   next step renders each resolution's clusters as its own UMAP panel so
-#   the five options can be visually compared side by side (guide §7.5),
+#   the five options can be visually compared side by side,
 #   before any decision is made about which resolution to carry forward.
 # ****************************************************************************#

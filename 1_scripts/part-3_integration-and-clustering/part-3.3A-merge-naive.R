@@ -89,8 +89,8 @@ cat("Clustering complete:", length(unique(merged_naive$seurat_clusters)), "clust
 
 # --- 3. Checkpoint: Persist the Naive Baseline to Disk ---
 # ****************************************************************************#
-#   `merged_naive` is needed again much later (Step 11 comparison UMAPs and
-#   Step 12 mixing metrics), so we checkpoint it now — a crashed job can
+#   `merged_naive` is needed again much later (the comparison UMAPs and
+#   mixing metrics), so we checkpoint it now — a crashed job can
 #   resume from here without redoing the merge + clustering workflow.
 #
 #   The serialization format is governed by CHECKPOINT_FORMAT, set once in
@@ -129,7 +129,7 @@ cat("✓ Checkpoint written:", CHECKPOINT_FILE, "\n\n")
 # SUMMARY & PIPELINE MILESTONE TRANSITION
 # ****************************************************************************#
 # WHERE WE STARTED:
-#   Before entering this step, Step 2 delivered 8 independently QC-filtered
+#   Before entering this step, Part 2 delivered 8 independently QC-filtered
 #   Seurat objects sharing a common gene space — structurally ready to
 #   combine, but still living as separate objects with no shared embedding.
 #

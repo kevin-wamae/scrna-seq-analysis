@@ -79,7 +79,7 @@ plan(sequential)
 # --- ENFORCE A SHARED GENE SPACE ACROSS SAMPLES ---
 # ****************************************************************************#
 # WHY THIS MATTERS FOR INTEGRATION:
-# Each sample's Part 2 gene-level QC filter (Step 8) can retain a slightly
+# Each sample's Part 2 gene-level QC filter can retain a slightly
 # different gene set — a gene detected in ≥0.1% of cells in one sample might
 # fall just below that bar in another. FastMNN (via Seurat's IntegrateLayers)
 # and Harmony both require every sample to share the exact same feature
@@ -128,7 +128,7 @@ cat("Common genes retained:", length(common_genes), "\n")
 #   structural obstacle standing between "a folder of separate objects" and
 #   "an integratable dataset": each sample's independently-filtered gene set.
 #   By intersecting all sample gene lists into a single common feature space,
-#   every object entering Step 3 now shares identical rows.
+#   every object entering Part 3 now shares identical rows.
 #
 # WHERE WE ARE HEADING (STEP 3.3A):
 #   With a common gene space established, our sample list is now

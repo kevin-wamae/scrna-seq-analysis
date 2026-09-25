@@ -33,7 +33,7 @@ ensure_dependencies(step = "part-6.5-final-results-comprehensive-visualization.R
 #   Step 6.4 vetted the chosen partition numerically (cluster sizes, sample and
 #   condition composition). This step is the visual bookend to that work: a
 #   single figure presenting the final integrated-and-clustered object the way
-#   a reader first meets it (guide §7.8, STEP 19). Four panels, each answering
+#   a reader first meets it. Four panels, each answering
 #   a different question:
 #
 #     1. FINAL CLUSTERS (top left): what the chosen `optimal_resolution`
@@ -53,7 +53,7 @@ ensure_dependencies(step = "part-6.5-final-results-comprehensive-visualization.R
 #        faceted into one panel per condition, so a cluster appearing in only
 #        one condition is immediately visible.
 #
-#   INTERPRETATION (guide §9.1):
+#   INTERPRETATION:
 #     - Good integration : samples intermingle; condition signal present but
 #       not driving the global structure.
 #     - Red flags        : sample-shaped islands (under-integration), or a
@@ -61,6 +61,27 @@ ensure_dependencies(step = "part-6.5-final-results-comprehensive-visualization.R
 #   These are eyeball checks that complement, not replace, the numbers in
 #   `cluster_sample_composition.csv` / `cluster_condition_composition.csv`
 #   from Step 6.4.
+#
+#   WHAT THIS FIGURE CAN AND CANNOT SHOW:
+#   Successful integration is suggested when samples mix within comparable
+#   cell populations, while known biological structure and condition-enriched
+#   populations remain visible. A mixed sample-colour pattern alone does not
+#   prove that treatment biology was preserved; that conclusion also requires
+#   condition-aware comparisons, marker genes, composition analysis, and later
+#   within-cell-type differential expression.
+#
+#   Conversely, condition separation on a UMAP is not automatically desirable
+#   or undesirable. Broad separation can reflect biology or residual batch
+#   structure, and broad mixing can reflect successful correction or excessive
+#   correction. Read this figure together with the integration comparison and
+#   cluster-quality outputs rather than using one visual pattern as a verdict.
+#
+#   LABEL-PLACEMENT CAVEAT: cluster labels are calculated from embedding
+#   coordinates and may sit away from the densest visible cells when a cluster
+#   is elongated, sparse, or unevenly distributed between condition panels.
+#   The plotted colour/group assignment—not the label location—defines cluster
+#   membership. Inspect the metadata and composition tables when a label looks
+#   visually displaced.
 #
 #   CHECKPOINT DECISION: none. This is a plotting-only step — its entire output
 #   is two PNGs, and it creates no heavy intermediate that a later step would
@@ -179,6 +200,6 @@ cat("→ Saved:", file.path(PLOTS_CLUSTERING_DIR, "10_clusters_by_condition_spli
 #   Step 6.6 produces the actual Part 3 deliverable: it joins the assay layers
 #   for a portable object, saves it to `integrated_data/` (honouring
 #   CHECKPOINT_FORMAT), and writes the per-cell metadata and the one-row
-#   integration summary to `metadata/` (guide §8, STEP 20), so downstream
+#   integration summary to `metadata/`, so downstream
 #   cell-type annotation can start from a clean file.
 # ****************************************************************************#

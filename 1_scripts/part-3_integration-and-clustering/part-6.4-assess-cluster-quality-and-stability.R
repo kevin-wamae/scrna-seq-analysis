@@ -34,7 +34,7 @@ ensure_dependencies(step = "part-6.4-assess-cluster-quality-and-stability.R")
 #   clusters are well-separated in the integrated embedding — but it says
 #   nothing about whether those clusters are biologically sensible or merely
 #   artifacts of the clustering itself. This step performs two sanity checks
-#   on the chosen partition (guide §7.7):
+#   on the chosen partition:
 #
 #     1. QUALITY (cluster sizes): are any clusters implausibly small? A tiny
 #        cluster (<1% of cells) is either a genuine rare population or an
@@ -48,6 +48,21 @@ ensure_dependencies(step = "part-6.4-assess-cluster-quality-and-stability.R")
 #
 #   Neither check is pass/fail. They produce ranges with interpretation, and
 #   the final call is always made by eye against the Step 6.2A UMAP grid.
+#
+#   WARNING SIGNS, NOT AUTOMATIC FAILURES:
+#   A small cluster can be a genuine rare population or an over-split fragment;
+#   its size alone cannot distinguish those explanations. Likewise, a
+#   sample-dominated cluster can indicate residual batch structure, but it may
+#   also reflect a real sample-specific population or a sample with unusual
+#   biology. A condition-enriched cluster is not a batch warning by itself:
+#   condition is the biological contrast this analysis is designed to preserve.
+#
+#   Interpret these flags together with the UMAPs, marker genes, QC history,
+#   and the known study design. Common examples such as <50 cells, <1% of
+#   cells, and >70% from one sample are useful prompts for review, not universal
+#   definitions of bad clusters. This script keeps the checks deliberately
+#   descriptive so that downstream biological annotation can resolve the
+#   rare-population-versus-artifact question.
 
 
 # --- 1. Cluster Sizes & Small-Cluster Detection ---
@@ -242,8 +257,7 @@ cat("→ Saved:", file.path(PLOTS_CLUSTERING_DIR, "08_condition_distribution_clu
 # WHERE WE ARE HEADING (NEXT: FINAL VISUALIZATION + SAVE):
 #   With a vetted resolution and no qualifying sample-driven clusters, the
 #   pipeline moves to the closing steps of this section: a single UMAP figure
-#   presenting the final integrated-and-clustered object (guide §7.8, STEP
-#   19), then saving that object and its metadata as the deliverable for
-#   downstream cell-type annotation and differential expression (guide §8,
-#   STEP 20).
+#   presenting the final integrated-and-clustered object, then saving that
+#   object and its metadata as the deliverable for downstream cell-type
+#   annotation and differential expression.
 # ****************************************************************************#

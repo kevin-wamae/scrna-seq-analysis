@@ -25,13 +25,13 @@ ensure_dependencies(step = "part-3.3B-visualize-batch-effects.R")
 
 # --- THE PURPOSE OF THIS DIAGNOSTIC ---
 # ****************************************************************************#
-#   Step 3 gave us cluster counts and cell totals, but a number can't tell
+#   The naive merge gave us cluster counts and cell totals, but a number can't tell
 #   you WHERE batch effects live in the data — it can't distinguish "19
 #   clusters because there are 19 real cell types" from "19 clusters because
 #   each sample partly formed its own island." A UMAP colored by sample makes
 #   that distinction visible: if patients form isolated islands rather than
 #   mixing within shared biological cell-type clusters, that's the batch
-#   effect Harmony/FastMNN are meant to correct in Step 5.
+#   effect Harmony/FastMNN are meant to correct.
 #
 #   IMPORTANT CAVEAT: with 72,649 cells, this UMAP is extremely dense —
 #   points overplot each other, and whichever color/group gets drawn last
@@ -39,7 +39,7 @@ ensure_dependencies(step = "part-3.3B-visualize-batch-effects.R")
 #   that "looks" well-mixed can just be overplotting. That's exactly why this
 #   diagnostic uses four panels instead of one: no single view is trustworthy
 #   alone at this scale, and even together they only give a visual
-#   impression — Step 5 replaces that impression with an actual per-cluster
+#   impression — the quantitative step replaces that impression with an actual per-cluster
 #   composition statistic. Treat this figure as our fixed "before" picture
 #   for comparison, not as proof of anything on its own.
 

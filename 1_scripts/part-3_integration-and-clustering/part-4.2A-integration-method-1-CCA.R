@@ -67,7 +67,7 @@ integrated_cca <- LOG_STEP("Running CCA integration...", {
 #   "integrated.cca" rather than "pca", so clusters and UMAP coordinates
 #   reflect batch-corrected space. The UMAP is stored under its own name
 #   ("umap.cca") so each method's embedding survives side-by-side for the
-#   Step 11 comparison plots.
+#   later comparison plots.
 integrated_cca <- LOG_STEP("Clustering and UMAP on CCA embedding...", {
   integrated_cca %>%
     FindNeighbors(reduction = "integrated.cca", dims = 1:30, verbose = FALSE) %>%

@@ -106,7 +106,7 @@ library(cluster)
 # - `furrr` / `purrr`: purrr-flavored map() functions — `purrr` for readable
 #   sequential iteration, `furrr` for its drop-in parallel equivalents built
 #   on `future` (e.g. `future_map()` loading all QC-filtered samples
-#   simultaneously in Step 2).
+#   simultaneously in Part 2).
 # - `qs2`: Successor to the `qs` package for fast object serialization.
 #   Used for pipeline checkpoints (merged/integrated Seurat objects) —
 #   multithreaded ZSTD compression makes saving/loading multi-GB objects
