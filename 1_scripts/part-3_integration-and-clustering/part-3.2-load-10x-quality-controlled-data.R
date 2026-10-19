@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 3.2: Load QC-filtered samples from Step 3.1
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 2 · §3.2
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 5.3A: Assess biological signal preservation
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 13 · §6.3
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

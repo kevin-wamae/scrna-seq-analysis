@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 3.0 :Installation of R-level packages (not available via pixi/conda)
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP n/a · §2.1 (package installation)
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 5.3: Select optimal integration method
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 14 · §6.4
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

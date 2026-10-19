@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 3.3A: Naive merge without integration
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 3 · §4.1
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

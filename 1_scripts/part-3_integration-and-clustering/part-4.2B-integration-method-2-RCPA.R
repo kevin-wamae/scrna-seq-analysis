@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 4.2B: RPCA Integration
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 8 · §5.5
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

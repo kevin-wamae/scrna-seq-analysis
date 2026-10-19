@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 3.0: Dependency manager for the integration & clustering pipeline
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP n/a · pipeline infrastructure
 #   Every script in this folder passes in-memory objects to the next one
 #   (e.g. `seurat_list`, `merged_seurat`, `mixing_results`), so a step run
 #   on its own in a fresh session errors the moment it touches an object an

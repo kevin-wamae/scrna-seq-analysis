@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 3.3C: Quantify batch effects with mixing metrics
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 5 · §4.3
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

@@ -32,12 +32,12 @@ and ends with a milestone-transition summary.
 - `3_output/<RUN_ID>/` — `qc_and_filtering/` (plots, filtered_data, metrics) and
   `integration_and_clustering/` (plots, integrated_data, metadata, checkpoints).
 - `3_guide/` — tutorial clippings from ngs101.com that the scripts' commentary
-  is written against: `Part 1 - From FASTQ to Count Matrix.md`,
-  `Part 2A/2B - Quality Control and Cell Filtering.md`,
-  `Part 3 - Integration and Clustering.md`. Comments cite them as
-  "guide §<section>" / "STEP <N>", and each script's SUMMARY & PIPELINE
-  MILESTONE TRANSITION mirrors the guide's narrative — keep new steps aligned
-  with it.
+  is written against: `Part 1 - From FASTQ to Count Matrix.md` (guide 1),
+  `Part 2A/2B - Quality Control and Cell Filtering.md` (guide 2A/2B),
+  `Part 3 - Integration and Clustering.md` (guide 3). Every script carries a
+  `# REFERENCE: Guide <file> · STEP <n> · §<section>` line under its banner,
+  and prose cites `guide 3 §<section>` / `STEP <n>`. Keep new steps aligned
+  with the guide and never strip these citations.
 - `logs/` — HPC job logs.
 
 ## Cohort & analysis design
@@ -75,6 +75,12 @@ banner says "STEP 15" — historically inconsistent, left as-is for now.)
 
 **2. Comment style**
 - File banner: `# ***` line, `# STEP <N>: Title`, closing `# ***`.
+- Reference line directly under the banner:
+  `# REFERENCE: Guide <file> · STEP <n> · §<section>` (e.g.
+  `# REFERENCE: Guide 3 · STEP 15 · §7.1-7.6`). Use `STEP n/a` where the
+  script has no guide step (loaders, infrastructure). Inline citations name
+  the guide file, e.g. `(guide 3 §7.5)` or `(guide 3 §8, STEP 20)`, so a
+  citation is unambiguous across guides.
 - Section headings: `# --- UPPERCASE HEADING ---` immediately followed by a
   `# ****` divider.
 - Prose blocks: explain WHY a method exists, its strengths/costs, what the
@@ -231,6 +237,11 @@ File types follow a strict, readable scheme (lowercase snake_case everywhere):
   re-sourced rather than silently skipped. `6.6` now honours
   `CHECKPOINT_FORMAT` for the final object extension (`integrated_clustered_seurat.qs2`/`.rds`)
   and wraps the save in `LOG_STEP`; no new analysis, plots, or filenames.
+- Guide citations restored and standardised: the `b1a7e0c` removal was
+  reverted, every Part 3 script now carries a
+  `# REFERENCE: Guide 3 · STEP <n> · §<section>` line under its banner, and
+  inline citations name the guide file (e.g. `guide 3 §7.5`). Guide 1 / 2A /
+  2B keep their numbers if cited in future work.
 - Pending: downstream cell-type annotation (Part 4 scaffolded in pixi.toml,
   commented out).
 - After each work session, update this section so the next session resumes.

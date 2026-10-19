@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 4.2A: CCA Integration
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 7 · §5.4
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

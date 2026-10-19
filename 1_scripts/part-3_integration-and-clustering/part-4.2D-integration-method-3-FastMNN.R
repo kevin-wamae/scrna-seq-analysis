@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 4.2D: FastMNN Integration
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 10 · §5.7
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

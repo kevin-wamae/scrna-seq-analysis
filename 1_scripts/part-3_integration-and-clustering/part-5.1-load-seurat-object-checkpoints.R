@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 5.1: Load Seurat object checkpoints
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP n/a · checkpoint loader (supports STEP 11-14)
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---
 # ****************************************************************************#
