@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 5.2B: Calculate integration quality metrics
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 12 · §6.2
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

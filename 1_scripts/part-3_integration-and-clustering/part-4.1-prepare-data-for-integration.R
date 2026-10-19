@@ -1,6 +1,7 @@
 #-----------------------------------------------
 # STEP 4.1: Prepare data for integration
 #-----------------------------------------------
+# REFERENCE: Guide 3 · STEP 6 · §5.3
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

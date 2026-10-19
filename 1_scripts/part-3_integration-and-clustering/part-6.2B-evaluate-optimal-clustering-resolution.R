@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 6.2B: Evaluate optimal clustering resolution
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 17 · §7.6
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---
@@ -71,6 +72,22 @@ ensure_dependencies(step = "part-6.2B-evaluate-optimal-clustering-resolution.R")
 #     4. Visually validate that the chosen resolution makes biological
 #        sense — this is what Step 6.2A's comparison grid was for, and is
 #        worth revisiting once a candidate resolution is picked here.
+#
+#   GUIDE 3 §9.2 / §10.3 — NUMERIC RECOMMENDATION, NOT BIOLOGICAL VERDICT:
+#   The silhouette score supplies a reproducible comparison of separation in
+#   the integrated space. It cannot determine whether a cluster represents a
+#   real cell type, a cell state, or an over-split continuum. Guide 3's
+#   broad PBMC ranges (for example, roughly 8-15 clusters for major types plus
+#   subtypes) are orientation only; they should not be used as a universal
+#   pass/fail filter or forced onto a different cohort.
+#
+#   Therefore the resolution printed below is best read as the top numeric
+#   candidate. A defensible final choice also revisits the Step 6.2A UMAP grid,
+#   cluster sizes and sample composition from Step 6.4, and—once annotation
+#   begins—marker-gene coherence. A silhouette value below Guide 3's rough
+#   0.3 reference is a prompt to investigate overlap or over-splitting, not an
+#   automatic rejection; values depend on the embedding, distance scale, and
+#   biological complexity of the dataset.
 #
 #   WHY THE INTEGRATED EMBEDDING, NOT THE UMAP: silhouette scores are
 #   calculated on `integrated_reduction` (e.g. "harmony", "integrated.cca")
@@ -288,9 +305,9 @@ cat("✓ Checkpoint written:", METRICS_CP, "\n")
 # WHERE WE ARE HEADING (NEXT: STEP 6.3 LOADER, THEN CLUSTER QUALITY):
 #   Step 6.3 loads the two checkpoints back into memory in seconds,
 #   letting every downstream step (cluster quality assessment, the final
-#   integrated visualization, and the eventual save in guide §7.8/8) pick
+#   integrated visualization, and the eventual save in guide 3 §7.8/§8) pick
 #   up exactly this state without re-running Steps 5.3B-6.2B. From there
 #   Step 6.4 checks cluster sizes and each cluster's sample composition at
 #   `optimal_resolution`, flagging anything that still looks sample-
-#   dominated before this clustering is treated as final (guide §7.7).
+#   dominated before this clustering is treated as final (guide 3 §7.7).
 # ****************************************************************************#

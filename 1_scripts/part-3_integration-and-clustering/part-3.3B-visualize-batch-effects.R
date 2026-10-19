@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 3.3B: Visualize batch effects in naive merge
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 4 · §4.2
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

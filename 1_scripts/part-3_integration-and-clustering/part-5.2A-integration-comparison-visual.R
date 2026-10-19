@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 5.2A: Generate integration comparison UMAPs
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 11 · §6.1
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 6.3: Load clustering checkpoints
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP n/a · checkpoint loader (supports STEP 18-20)
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---
@@ -125,7 +126,7 @@ cat(sprintf(
 # WHERE WE ARE HEADING (NEXT: CLUSTER QUALITY ASSESSMENT, THEN FINAL
 # VISUALIZATION):
 #   Step 6.4 assesses cluster quality/stability on this restored object
-#   (cluster sizes, sample/condition composition), then guide §7.8's final
+#   (cluster sizes, sample/condition composition), then guide 3 §7.8's final
 #   integrated visualization and save conclude Part 3. As long as the
 #   checkpoints exist, none of those steps need to recompute clustering.
 # ****************************************************************************#

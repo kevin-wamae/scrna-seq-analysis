@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 3.1: Load required libraries and configure environment
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 1 · §2.2
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---

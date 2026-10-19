@@ -1,6 +1,7 @@
 # ****************************************************************************#
 # STEP 4.2C: Harmony Integration
 # ****************************************************************************#
+# REFERENCE: Guide 3 · STEP 9 · §5.6
 
 
 # --- PREREQUISITES (scripts that must run before this one in this session) ---
