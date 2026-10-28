@@ -176,7 +176,11 @@ File types follow a strict, readable scheme (lowercase snake_case everywhere):
 - **Tables / CSVs** — descriptive snake_case with **no** numeric prefix:
   `integration_comparison_metrics.csv`, `cell_metadata.csv`, per-sample
   `<sample_id>_QC_summary.csv`. Written with `write.csv(..., row.names = FALSE)`
-  into `metadata/` (part-3) or `metrics/` (part-2).
+  into `metadata/` (part-3) or `metrics/` (part-2). Layout for every save:
+  `write.csv(obj,` / path via `file.path(...)` on its own 4-space-indented
+  line / `row.names = ...` / closing `)`, with the path inlined (no `*_OUT`
+  variable) and repeated in `cat("→ Saved:", file.path(...), "\n")`. The only
+  `row.names = TRUE` case is the barcode-keyed cell metadata in part-6.6.
 - **Seurat objects / checkpoints** — `NN_<slug>.<ext>` with the same 2-digit
   run-order prefix: `01_merged_naive`, `02_integrated_cca`,
   `03_integrated_rpca`, `04_integrated_harmony`, `05_integrated_fastmnn`,

@@ -113,11 +113,11 @@ cat("→ Saved:", FINAL_OBJECT, "\n")
 #   note in WHY THIS STEP EXISTS). Every per-cell covariate — sample, condition,
 #   QC metrics, and the `clusters_res_*` / `seurat_clusters` columns — travels
 #   with the table.
-CELL_METADATA_OUT <- file.path(METADATA_OUT_DIR, "integrated_cell_metadata.csv")
 write.csv(integrated_final@meta.data,
-          CELL_METADATA_OUT,
-          row.names = TRUE)
-cat("→ Saved:", CELL_METADATA_OUT, "\n")
+    file.path(METADATA_OUT_DIR, "integrated_cell_metadata.csv"),
+    row.names = TRUE
+)
+cat("→ Saved:", file.path(METADATA_OUT_DIR, "integrated_cell_metadata.csv"), "\n")
 
 
 # --- 4. Build & Save the Integration Summary ---
@@ -138,9 +138,11 @@ integration_summary <- data.frame(
     condition_separation = mixing_results$condition_separation[mixing_results$method == best_method]
 )
 
-INTEGRATION_SUMMARY_OUT <- file.path(METADATA_OUT_DIR, "integration_summary.csv")
-write.csv(integration_summary, INTEGRATION_SUMMARY_OUT, row.names = FALSE)
-cat("→ Saved:", INTEGRATION_SUMMARY_OUT, "\n")
+write.csv(integration_summary,
+    file.path(METADATA_OUT_DIR, "integration_summary.csv"),
+    row.names = FALSE
+)
+cat("→ Saved:", file.path(METADATA_OUT_DIR, "integration_summary.csv"), "\n")
 
 
 # ****************************************************************************#
