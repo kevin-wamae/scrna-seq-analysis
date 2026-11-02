@@ -136,6 +136,12 @@ print(mixing_results)
 # ****************************************************************************#
 #   Uses METADATA_OUT_DIR, registered back in Step 3.1's dynamic output-path
 #   setup, rather than hardcoding the date-stamped job run path here.
+#
+#   This file is incomplete by design: it holds the mixing score and cluster
+#   count only. Step 5.3A adds `condition_separation` to the same table and
+#   rewrites this CSV, so after Step 5.3A the file carries both axes of the
+#   method comparison. Reading it between the two steps gives you the
+#   mixing-only view.
 write.csv(mixing_results,
     file.path(METADATA_OUT_DIR, "integration_comparison_metrics.csv"),
     row.names = FALSE

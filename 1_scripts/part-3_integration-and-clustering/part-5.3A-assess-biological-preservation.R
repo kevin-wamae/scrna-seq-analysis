@@ -13,7 +13,8 @@
 #     scored here (via `methods_list`).
 #   • part-5.2B-integration-comparison-quantitatively.R — supplies
 #     `methods_list` and `mixing_results`, which this step extends with a
-#     `condition_separation` column.
+#     `condition_separation` column and rewrites to
+#     `integration_comparison_metrics.csv` so both scores are on disk.
 #   The dependency manager is always re-sourced here (base-R only, cheap) so
 #   the latest DEP_TABLE is loaded on every run; ensure_dependencies() does
 #   nothing if `mixing_results` is already in the environment, otherwise it
@@ -113,9 +114,25 @@ cat("(Higher separation = conditions remain distinguishable)\n\n")
 print(mixing_results[, c("method", "mixing_score", "condition_separation", "n_clusters")])
 
 
+# --- 3. Persist the Completed Comparison Table ---
+# ****************************************************************************#
+#   Step 5.2B wrote `integration_comparison_metrics.csv` from `mixing_results`
+#   BEFORE this column existed, so the file on disk so far carries the mixing
+#   score and cluster count only. Rewriting it here is deliberate: the same
+#   artifact is completed rather than duplicated, and afterwards one CSV holds
+#   every number the method decision is made from. That matters because
+#   condition separation otherwise exists only in this session's console and
+#   in `05_mixing_vs_preservation.png` — a plot you cannot re-analyse
+#   (guide 3 §10.1: a decision is only reproducible if the evidence behind it
+#   is on disk).
+write.csv(mixing_results,
+    file.path(METADATA_OUT_DIR, "integration_comparison_metrics.csv"),
+    row.names = FALSE
+)
+cat("→ Saved:", file.path(METADATA_OUT_DIR, "integration_comparison_metrics.csv"), "\n")
 
 
-# --- 3. Visualize the Mixing vs. Separation Trade-off ---
+# --- 4. Visualize the Mixing vs. Separation Trade-off ---
 # ****************************************************************************#
 #   Ideal integration methods land in the upper right: high mixing (samples
 #   blend within conditions) AND high separation (conditions remain
@@ -152,8 +169,11 @@ ggsave(file.path(PLOTS_COMPARISON_DIR, "05_mixing_vs_preservation.png"),
 #   We computed a condition-separation score for all five methods — the
 #   distance between each condition's mean UMAP position — and combined it
 #   with the existing mixing scores into one table and one trade-off plot
-#   (05_mixing_vs_preservation.png). Methods can now be judged on both axes
-#   at once: which one, if any, sits in the "high mixing + preserved
+#   (05_mixing_vs_preservation.png). That table is also written back to
+#   integration_comparison_metrics.csv, the artifact Step 5.2B created before
+#   this column existed, so the on-disk CSV now carries mixing score, cluster
+#   count, and condition separation side by side. Methods can now be judged on
+#   both axes at once: which one, if any, sits in the "high mixing + preserved
 #   biology" upper-right region rather than trading one for the other.
 #
 # WHERE WE ARE HEADING (SELECTING THE BEST INTEGRATION METHOD):
