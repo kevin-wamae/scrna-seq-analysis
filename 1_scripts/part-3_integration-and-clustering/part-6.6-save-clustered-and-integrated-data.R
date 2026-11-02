@@ -68,6 +68,14 @@ ensure_dependencies(step = "part-6.6-save-clustered-and-integrated-data.R")
 #   Guide 3 thresholds such as a preferred cluster-count range or a mixing-score
 #   reference are study-context prompts, not universal pass/fail rules.
 #
+#   GUIDE 3 §10.1 — DOCUMENT EVERY DECISION:
+#   That is the second job of `integration_summary.csv`. Method, resolution,
+#   cluster count, and the two integration scores are recorded together so a
+#   later reader — or a reviewer asking "why this method?" — can reconstruct
+#   the decision without re-running the comparison, and so a future you can
+#   tell which numbers any downstream annotation or differential-expression
+#   result was built on.
+#
 #   CHECKPOINT DECISION: no additional checkpoint. The object written here is
 #   itself the preserved artifact, and Steps 6.2B/6.3 already carry the
 #   `06_clustered_final` / `07_clustering_metrics` checkpoints for resuming the
@@ -143,6 +151,65 @@ write.csv(integration_summary,
     row.names = FALSE
 )
 cat("→ Saved:", file.path(METADATA_OUT_DIR, "integration_summary.csv"), "\n")
+
+
+# --- IF THIS RUN LOOKS WRONG: WHERE TO LOOK NEXT ---
+# ****************************************************************************#
+#   Guide 3 §9.3 and §10.6 pair each symptom with a diagnosis and a remedy.
+#   Nothing below is executed — the remedies depend on what your own figures
+#   show — but keeping the mapping beside the deliverable means the first
+#   response to a worrying summary is "check this file", not "re-run
+#   everything". Guide 3's numbers (<2.5 mixing, <1.5 separation, >70% from one
+#   sample, <50 cells) are prompts for review, not pass/fail gates, and the
+#   §10.6 code snippets assume objects this pipeline does not have.
+#
+#     - Sample-shaped islands on the sample-coloured UMAP
+#       (`09_final_integrated_clustered.png`, bottom left) → under-integration.
+#       Compare `mixing_score` in `integration_comparison_metrics.csv`.
+#       Remedies the guide names: a more aggressive method (CCA over RPCA,
+#       Harmony over FastMNN), or more integration dimensions.
+#     - Uniform mixing with no condition signal left
+#       (`09_final_integrated_clustered.png`, top right) → possible
+#       over-integration. Compare `condition_separation` in
+#       `integration_comparison_metrics.csv` (Step 5.3A writes that column;
+#       `05_mixing_vs_preservation.png` shows the same trade-off visually).
+#       Remedies: a more conservative method (FastMNN), fewer dimensions, or a
+#       weaker Harmony correction.
+#     - One cluster dominated by a single sample
+#       (`07_sample_distribution_clusters.png`,
+#       `cluster_sample_composition.csv`) → residual batch structure. Rule out
+#       genuine sample-specific biology, and that sample's QC history, before
+#       re-running integration.
+#     - Many tiny clusters that appear and vanish between resolutions
+#       (`06_multi_resolution_clustering.png`) → over-clustering. Lower the
+#       resolution, or treat the population as a continuum rather than a
+#       discrete type.
+#     - One cluster holding most of the cells → resolution too low, or too few
+#       PCs; check `resolution_comparison_metrics.csv` before raising
+#       resolution.
+#
+#   These are options to evaluate, not a queue of fixes. A single worrying
+#   symptom is a prompt to look at the evidence, not a verdict on the run.
+
+
+# --- WHAT PART 3 ESTABLISHED (guide 3 §11.1) ---
+# ****************************************************************************#
+#   Four conclusions this run supports, stated as conclusions about this cohort
+#   rather than as general laws:
+#
+#     1. Integration was not optional. The naive merge measurably grouped cells
+#        by sample (Step 3.3C), and one of four methods was then chosen on
+#        measured mixing rather than convention.
+#     2. Method choice was compared, not assumed. Mixing and condition
+#        separation were computed for every method; `best_method` records the
+#        winner and the summary preserves the evidence behind it.
+#     3. The resolution was a judgement, not a default. It came from a
+#        silhouette comparison plus a visual check that the clusters are
+#        interpretable, and it stays revisable without redoing integration.
+#     4. Validation continues downstream. Nothing in this file identifies a
+#        cell type. Marker-gene annotation, composition analysis, and
+#        within-cell-type differential expression are what turn these clusters
+#        into biology.
 
 
 # ****************************************************************************#

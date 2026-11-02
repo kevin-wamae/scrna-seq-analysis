@@ -67,6 +67,35 @@ if (n_batch_clusters > 0) {
 # → Integration is necessary
 
 
+# --- WHEN INTEGRATION MAY BE SKIPPED (guide 3 §10.5) ---
+# ****************************************************************************#
+#   The verdict above is specific to THIS design, not a universal rule. The
+#   guide lists the cases where integration costs time and replaces biology
+#   with very little technical variation removed, and they are worth checking
+#   whenever a verdict looks borderline:
+#
+#     - SINGLE SAMPLE. With one library there is no between-sample technical
+#       variation to remove; "correction" would only resample noise.
+#     - NO MEASURABLE BATCH STRUCTURE. If every cluster draws broadly from
+#       every sample (n_batch_clusters near zero) and the UMAPs show no
+#       sample-shaped islands, the merge is already comparable, and a stronger
+#       correction risks erasing biology rather than removing artefacts.
+#     - SAMPLES THAT ARE MEANT TO DIFFER. Deliberately different tissues,
+#       protocols, or timepoints you intend to analyse side by side can be
+#       genuinely separated in expression space; integration then removes the
+#       contrast the study is about.
+#     - EXPLORATION ONLY. For a first look at QC and rough composition the
+#       naive merge is enough; integration belongs to the analysis you intend
+#       to report.
+#
+#   None of those applies here: eight libraries processed as separate batches,
+#   four donors per condition, and one cluster already dominated by a single
+#   sample at >50%. Integration is the right next step for this cohort — but
+#   the criterion is the measured composition above, not the sample count by
+#   itself, and a future cohort with a different design would need to pass
+#   this check again rather than inherit today's answer.
+
+
 # ****************************************************************************#
 # SUMMARY & PIPELINE MILESTONE TRANSITION
 # ****************************************************************************#

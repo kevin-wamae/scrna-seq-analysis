@@ -246,6 +246,20 @@ File types follow a strict, readable scheme (lowercase snake_case everywhere):
   `# REFERENCE: Guide 3 · STEP <n> · §<section>` line under its banner, and
   inline citations name the guide file (e.g. `guide 3 §7.5`). Guide 1 / 2A /
   2B keep their numbers if cited in future work.
+- Guide 3 §§9–11.2 now fully distributed. New prose only, no code, no new
+  outputs, no dependency rows: §10.5 in `part-3.3C` (when integration can be
+  skipped, and why this cohort fails that test), §10.1 in `part-6.6`'s
+  existing §§9-11 block, plus two comment-only `part-6.6` blocks — a
+  §9.3/§10.6 symptom → file → remedy map, and §11.1 "what Part 3
+  established". §9.1/§9.2/§10.2/§10.3/§10.4/§11.2 were already covered by
+  `6.5`, `6.4`, `6.1`, `6.2A`, `6.2B`, `5.3B` and `4.2A`–`4.2D`; do not
+  duplicate them into `6.6`.
+- Fixed the `condition_separation` persistence gap: `part-5.2B` wrote
+  `integration_comparison_metrics.csv` before `part-5.3A` added the column,
+  and `5.3A` never rewrote it, so the score lived only in the console and in
+  `05_mixing_vs_preservation.png`. `5.3A` now rewrites the same CSV with
+  `method, mixing_score, n_clusters, condition_separation`, and `5.2B`'s save
+  comment says the file is completed there.
 - Pending: downstream cell-type annotation (Part 4 scaffolded in pixi.toml,
   commented out).
 - After each work session, update this section so the next session resumes.
